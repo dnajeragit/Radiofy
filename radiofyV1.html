@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Radiofy</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230b1220'/%3E%3Ccircle cx='32' cy='24' r='11' fill='%232563eb'/%3E%3Ccircle cx='32' cy='24' r='4' fill='%230b1220'/%3E%3Crect x='18' y='38' width='28' height='4' rx='2' fill='%2360a5fa'/%3E%3C/svg%3E" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin:0; font-family:Arial, sans-serif; background:linear-gradient(180deg, #0b1220 0%, #111827 18%, #0d1321 100%);
+      color:#fff; overflow:hidden;
+    }
+    .app { display:flex; height:100vh; }
+    .sidebar {
+      width:240px; background:linear-gradient(180deg, #0a0a0a 0%, #111111 100%);
+      padding:22px 16px; flex-shrink:0; border-right:1px solid rgba(255,255,255,0.08);
+      box-shadow:inset -1px 0 0 rgba(255,255,255,0.02);
+    }
+    .sidebar-header {
+      display:flex; align-items:center; gap:10px; margin-bottom:20px; padding:0 2px;
+    }
+    .sidebar-logo {
+      width:28px; height:28px; border-radius:9px; background:linear-gradient(135deg, #dbeafe, #2563eb 45%, #0f172a);
+      position:relative; box-shadow:0 8px 20px rgba(37,99,235,0.35);
+      overflow:hidden;
+    }
+    .sidebar-logo::before {
+      content:""; position:absolute; left:50%; top:36%; width:11px; height:11px; transform:translate(-50%, -50%);
+      border-radius:50%; background:#0b1220; box-shadow:0 0 0 3px rgba(96,165,250,0.95);
+    }
+    .sidebar-logo::after {
+      content:""; position:absolute; left:50%; bottom:6px; width:14px; height:4px; transform:translateX(-50%);
+      border-radius:999px; background:rgba(191,219,254,0.9); box-shadow:0 -10px 0 0 rgba(191,219,254,0.7);
+    }
+    .sidebar-title {
+      font-size:21px; font-weight:700; letter-spacing:-0.04em; color:#f8fafc; margin:0;
+    }
+    .right-rail {
+      width:300px; background:rgba(11, 17, 32, 0.45); border-left:1px solid rgba(255,255,255,0.08);
+      padding:18px 16px 16px; flex-shrink:0; display:flex; flex-direction:column; gap:16px;
+    }
+    .panel-card {
+      background:linear-gradient(180deg, rgba(31,41,55,0.9), rgba(17,24,39,0.8));
+      border:1px solid rgba(148,163,184,0.16); border-radius:12px; padding:14px;
+      box-shadow:0 12px 26px rgba(15,23,42,0.22);
+    }
+    #selectedStationPanel {
+      background:linear-gradient(180deg, rgba(15, 23, 42, 0.85), rgba(26, 44, 74, 0.82));
+      border-color: rgba(96, 165, 250, 0.26);
+      box-shadow: 0 18px 34px rgba(37, 99, 235, 0.12), inset 0 1px 0 rgba(191, 219, 254, 0.08);
+    }
+    #historyPanel {
+      background:rgba(15, 23, 42, 0.52);
+      border-color: rgba(148, 163, 184, 0.12);
+    }
+    .panel-title {
+      margin:0 0 12px; font-size:10px; letter-spacing:0.12em; text-transform:uppercase;
+      color:#94a3b8; font-weight:700;
+    }
+    .now-playing-card {
+      display:flex; flex-direction:column; gap:8px;
+    }
+    .now-playing-card img {
+      width:100%; height:136px; object-fit:cover; border-radius:10px; background:#07111d;
+      border:1px solid rgba(147, 197, 253, 0.18);
+    }
+    .now-playing-card h3 {
+      margin:0; font-size:18px; line-height:1.2;
+      color:#f8fafc;
+    }
+    .now-playing-card p {
+      margin:0; color:#cbd5e1; font-size:12px;
+    }
+    .history-list {
+      display:flex; flex-direction:column; gap:8px; max-height:calc(100vh - 360px); overflow-y:auto;
+    }
+    .history-item {
+      display:flex; align-items:center; gap:10px; padding:8px 8px; border-radius:10px;
+      background:rgba(15,23,42,0.28); border:1px solid rgba(148,163,184,0.08); cursor:pointer;
+      transition:0.2s ease;
+    }
+    .history-item:hover { background:rgba(30,41,59,0.7); }
+    .history-item img {
+      width:40px; height:40px; object-fit:cover; border-radius:8px; flex-shrink:0;
+      border:1px solid rgba(148,163,184,0.12);
+    }
+    .history-copy {
+      flex:1; min-width:0;
+    }
+    .history-copy strong {
+      display:block; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .history-copy span {
+      display:block; color:#94a3b8; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .remove-history {
+      background:transparent; border:none; color:#94a3b8; font-size:16px; cursor:pointer; padding:0 4px;
+    }
+    .brand {
+      display:flex; align-items:center; gap:10px; margin-bottom:18px;
+      color:#3b82f6; font-weight:bold; font-size:22px;
+      letter-spacing:-0.04em;
+    }
+    .brand-mark {
+      width:26px; height:26px; border-radius:50%; background:radial-gradient(circle at 35% 35%, #93c5fd, #2563eb 55%, #0f172a 100%);
+      position:relative; box-shadow:0 0 18px rgba(37,99,235,0.55);
+    }
+    .brand-mark::before {
+      content:""; position:absolute; inset:7px 7px 7px 7px; border-radius:50%;
+      background:rgba(15,23,42,0.82); border:2px solid rgba(147,197,253,0.8);
+    }
+    .sidebar p {
+      margin:0 0 15px; color:#8d8d8d; text-transform:uppercase; letter-spacing:0.14em;
+      font-size:10px; font-weight:700;
+    }
+    .nav { display:flex; flex-direction:column; gap:8px; }
+    .nav-btn {
+      border:none; background:transparent; color:#d9d9d9; border-radius:10px; padding:10px 12px;
+      text-align:left; cursor:pointer; font-size:14px; transition:0.2s ease; position:relative;
+      border:1px solid transparent; font-weight:600; letter-spacing:0.01em; display:flex; align-items:center; gap:10px;
+    }
+    .nav-btn:hover {
+      background:rgba(255,255,255,0.03); color:#fff;
+    }
+    .nav-btn.active {
+      background:linear-gradient(90deg, rgba(96,165,250,0.12), rgba(30,64,175,0.08));
+      color:#f8fafc; box-shadow:inset 0 0 0 1px rgba(147,197,253,0.12), 0 8px 16px rgba(15,23,42,0.18);
+      border-color:rgba(148,163,184,0.12);
+    }
+    .nav-btn .nav-icon {
+      width:10px; height:10px; border-radius:50%; background:rgba(148,163,184,0.18); border:1px solid rgba(148,163,184,0.2);
+      display:inline-block; position:relative; flex-shrink:0;
+    }
+    .nav-btn .nav-icon::before {
+      content:""; position:absolute; left:50%; top:50%; width:4px; height:4px; transform:translate(-50%, -50%);
+      border-radius:50%; background:#bfdbfe; box-shadow:0 0 0 1px rgba(59,130,246,0.2);
+    }
+    .nav-btn.active .nav-icon {
+      background:rgba(96,165,250,0.18); border-color:rgba(147,197,253,0.35);
+      box-shadow:0 0 0 3px rgba(96,165,250,0.08);
+    }
+    .main {
+      flex:1; padding:18px 22px 22px; display:flex; flex-direction:column; min-height:0;
+      background:linear-gradient(180deg, rgba(19,19,19,0.85), rgba(18,18,18,0.92));
+    }
+    .search {
+      display:flex; gap:10px; margin-bottom:14px; align-items:center;
+      padding:8px 10px; border-radius:10px; background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.06);
+    }
+    .search input {
+      flex:1; padding:12px 14px; border-radius:8px; border:none; background:#1f1f1f;
+      color:#fff; font-size:15px;
+      outline:none;
+    }
+    .search input::placeholder { color:#9a9a9a; }
+    .search button {
+      background:linear-gradient(180deg, rgba(96,165,250,0.24), rgba(37,99,235,0.8));
+      color:#eff6ff; border:none; border-radius:8px; padding:12px 18px; font-weight:600; cursor:pointer;
+      box-shadow:inset 0 0 0 1px rgba(191,219,254,0.12), 0 6px 12px rgba(37,99,235,0.12);
+      letter-spacing:0.01em; transition:0.2s ease;
+    }
+    .search button:hover {
+      transform:translateY(-1px); box-shadow:inset 0 0 0 1px rgba(191,219,254,0.18), 0 8px 14px rgba(37,99,235,0.16);
+    }
+    .country-panel {
+      background:rgba(255,255,255,0.025); border-radius:10px; padding:10px 12px; margin-bottom:12px;
+      border:1px solid rgba(255,255,255,0.08); min-height:72px;
+    }
+    .crumbs {
+      display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:8px;
+    }
+    .crumb {
+      background:#1f1f1f; color:#ddd; border:1px solid #2d2d2d; border-radius:8px;
+      padding:6px 9px; cursor:pointer; font-size:11px;
+    }
+    .crumb.active { background:#2563eb; color:#eff6ff; border-color:#2563eb; }
+    .country-grid { display:flex; flex-wrap:wrap; gap:6px; }
+    .country-chip, .region-chip {
+      background:#1f1f1f; color:#fff; border:1px solid #2d2d2d; border-radius:8px;
+      padding:6px 9px; cursor:pointer; font-size:11px; transition:0.18s ease;
+    }
+    .country-chip:hover, .region-chip:hover { border-color:#60a5fa; color:#60a5fa; }
+    .results {
+      display:flex; flex-wrap:wrap; gap:16px; padding-bottom:110px; overflow-y:auto;
+      min-height:0; flex:1; align-content:flex-start;
+    }
+    .card {
+      background:linear-gradient(180deg, #1f1f1f, #181818); padding:14px; border-radius:10px; width:220px;
+      border:1px solid rgba(255,255,255,0.04); box-shadow:0 8px 18px rgba(0,0,0,0.22);
+    }
+    .card img { width:100%; height:120px; object-fit:cover; border-radius:8px; background:#111; margin-bottom:12px; }
+    .card h3 { margin:0 0 8px; font-size:16px; }
+    .card p { margin:0 0 12px; color:#b3b3b3; font-size:13px; }
+    .card button {
+      width:100%; background:linear-gradient(180deg, rgba(96,165,250,0.22), rgba(37,99,235,0.75));
+      color:#eff6ff; border:none; border-radius:8px; padding:10px 12px; font-weight:600; cursor:pointer;
+      box-shadow:inset 0 0 0 1px rgba(191,219,254,0.12), 0 6px 12px rgba(37,99,235,0.12);
+      transition:0.2s ease;
+    }
+    .card button:hover {
+      transform:translateY(-1px); box-shadow:inset 0 0 0 1px rgba(191,219,254,0.16), 0 8px 14px rgba(37,99,235,0.16);
+    }
+    .empty-state {
+      background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05);
+      color:#ddd; padding:20px; border-radius:10px; width:100%;
+    }
+    .player {
+      position:fixed; bottom:0; left:0; right:0; background:rgba(24,24,24,0.96);
+      padding:10px 20px; display:flex; align-items:center; justify-content:center;
+      border-top:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(10px);
+    }
+    .player audio {
+      flex:1; max-width:760px; filter: invert(0.06) saturate(1.2) brightness(1.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo"></div>
+        <h2 class="sidebar-title">Radiofy</h2>
+      </div>
+      <p><b>Explorar</b></p>
+
+      <div class="nav">
+        <button class="nav-btn active" data-filter-type="auto-country" data-filter-value="">
+          <span class="nav-icon" aria-hidden="true"></span>
+          <span>Radios locales</span>
+        </button>
+        <button class="nav-btn" data-filter-type="region" data-filter-value="">
+          <span class="nav-icon" aria-hidden="true"></span>
+          <span>Región</span>
+        </button>
+        <button class="nav-btn" data-filter-type="tag" data-filter-value="rock">
+          <span class="nav-icon" aria-hidden="true"></span>
+          <span>Género</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="search">
+        <input id="query" placeholder="Buscar radios, género, país..." />
+        <button id="searchBtn">Buscar</button>
+      </div>
+      <div id="countryPanel" class="country-panel"></div>
+      <div id="results" class="results"></div>
+    </main>
+
+    <aside class="right-rail">
+      <div id="selectedStationPanel" class="panel-card">
+        <p class="panel-title">Estas escuchando...</p>
+        <div id="selectedStationCard" class="now-playing-card"></div>
+      </div>
+
+      <div id="historyPanel" class="panel-card">
+        <p class="panel-title">Últimas reproducciones</p>
+        <div id="historyList" class="history-list"></div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="player">
+    <audio id="player" controls></audio>
+  </div>
+
+  <script>
+    const defaultRadioImage = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="400" height="240" viewBox="0 0 400 240">
+        <rect width="400" height="240" fill="#0f172a"/>
+        <circle cx="200" cy="90" r="42" fill="#2563eb"/>
+        <circle cx="200" cy="90" r="18" fill="#0b1220"/>
+        <rect x="145" y="138" width="110" height="14" rx="7" fill="#60a5fa" opacity="0.9"/>
+        <rect x="118" y="166" width="164" height="12" rx="6" fill="#334155"/>
+      </svg>
+    `);
+
+    const REGION_BY_COUNTRY = {
+      'Argentina': 'Sudamérica',
+      'Brasil': 'Sudamérica',
+      'Chile': 'Sudamérica',
+      'Colombia': 'Sudamérica',
+      'Ecuador': 'Sudamérica',
+      'Perú': 'Sudamérica',
+      'Uruguay': 'Sudamérica',
+      'United States': 'Norteamérica',
+      'Canada': 'Norteamérica',
+      'Mexico': 'Norteamérica',
+      'Spain': 'Europa',
+      'Germany': 'Europa',
+      'France': 'Europa',
+      'Italy': 'Europa',
+      'Portugal': 'Europa',
+      'United Kingdom': 'Europa',
+      'Japan': 'Asia',
+      'India': 'Asia',
+      'South Korea': 'Asia',
+      'China': 'Asia',
+      'Indonesia': 'Asia',
+      'South Africa': 'África',
+      'Nigeria': 'África',
+      'Morocco': 'África',
+      'Kenya': 'África'
+    };
+
+    const COUNTRY_BY_REGION = {};
+    const COUNTRY_REGIONS = {};
+
+    const COUNTRY_ALIASES = {
+      'CL': 'Chile', 'AR': 'Argentina', 'BR': 'Brasil', 'PE': 'Perú', 'CO': 'Colombia',
+      'UY': 'Uruguay', 'EC': 'Ecuador', 'US': 'United States', 'CA': 'Canada', 'MX': 'Mexico',
+      'ES': 'Spain', 'DE': 'Germany', 'FR': 'France', 'IT': 'Italy', 'PT': 'Portugal', 'GB': 'United Kingdom',
+      'JP': 'Japan', 'IN': 'India', 'KR': 'South Korea', 'CN': 'China', 'ID': 'Indonesia',
+      'ZA': 'South Africa', 'NG': 'Nigeria', 'MA': 'Morocco', 'KE': 'Kenya'
+    };
+
+    let activeFilter = { type: 'search', value: '' };
+    let allStations = [];
+    let visibleCount = 0;
+    let loadingMore = false;
+    let allCountries = [];
+    let currentStation = null;
+    let radioHistory = [];
+    const PAGE_SIZE = 18;
+    const POPULAR_GENRES = ['Rock', 'Jazz', 'Pop', 'Electrónica', 'Classic Rock', 'Metal', 'Hip-Hop', 'Latin', 'Salsa', 'Cumbia', 'Reggae', 'Funk', 'Soul', 'Blues'];
+
+    const navigationState = {
+      continent: null,
+      country: null,
+      region: null
+    };
+
+    function getOptionsForState() {
+      if (navigationState.region && COUNTRY_REGIONS[navigationState.country]) {
+        return COUNTRY_REGIONS[navigationState.country];
+      }
+
+      if (navigationState.country) {
+        return COUNTRY_REGIONS[navigationState.country] || [];
+      }
+
+      if (navigationState.continent) {
+        return COUNTRY_BY_REGION[navigationState.continent] || [];
+      }
+
+      if (activeFilter.type === 'tag') {
+        return POPULAR_GENRES;
+      }
+
+      if (activeFilter.type === 'language') {
+        return ['Spanish', 'English', 'French', 'German', 'Italian'];
+      }
+
+      return Object.keys(COUNTRY_BY_REGION);
+    }
+
+    function panelLabel() {
+      if (activeFilter.type === 'tag') return 'Género';
+      if (activeFilter.type === 'language') return 'Idioma';
+      if (activeFilter.type === 'country') return 'País';
+      return 'Región';
+    }
+
+    function renderCountryPanel() {
+      const panel = document.getElementById('countryPanel');
+      const showPanel = activeFilter.type === 'region' || activeFilter.type === 'country' || activeFilter.type === 'tag' || activeFilter.type === 'language' || navigationState.continent || navigationState.country || navigationState.region;
+
+      if (!showPanel) {
+        panel.style.display = 'none';
+        panel.innerHTML = '';
+        return;
+      }
+
+      panel.style.display = 'block';
+      panel.innerHTML = '';
+
+      const crumbs = document.createElement('div');
+      crumbs.className = 'crumbs';
+
+      const addCrumb = (label, target) => {
+        const item = document.createElement('button');
+        item.className = 'crumb active';
+        item.textContent = label;
+        item.addEventListener('click', () => {
+          if (target === 'root') {
+            navigationState.continent = null;
+            navigationState.country = null;
+            navigationState.region = null;
+            activeFilter = { type: 'region', value: '' };
+          } else if (target === 'continent') {
+            navigationState.country = null;
+            navigationState.region = null;
+            activeFilter = { type: 'region', value: navigationState.continent };
+          } else if (target === 'country') {
+            navigationState.region = null;
+            activeFilter = { type: 'country', value: navigationState.country };
+          }
+
+          renderCountryPanel();
+          ejecutarFiltroActual();
+        });
+        crumbs.appendChild(item);
+      };
+
+      addCrumb(panelLabel(), 'root');
+
+      if (navigationState.continent) {
+        addCrumb(navigationState.continent, 'continent');
+      }
+
+      if (navigationState.country) {
+        addCrumb(navigationState.country, 'country');
+      }
+
+      if (navigationState.region) {
+        addCrumb(navigationState.region, 'region');
+      }
+
+      panel.appendChild(crumbs);
+
+      const options = getOptionsForState();
+      const optionsBox = document.createElement('div');
+      optionsBox.className = 'country-grid';
+
+      if (!options.length) {
+        panel.innerHTML = '';
+        panel.style.display = 'none';
+        return;
+      }
+
+      options.forEach(option => {
+        const button = document.createElement('button');
+        button.className = 'region-chip';
+        button.textContent = option;
+        button.addEventListener('click', () => {
+          if (activeFilter.type === 'tag') {
+            activeFilter = { type: 'tag', value: option.toLowerCase() };
+            document.getElementById('query').value = option;
+            buscar();
+            return;
+          }
+
+          if (activeFilter.type === 'language') {
+            activeFilter = { type: 'language', value: option };
+            document.getElementById('query').value = option;
+            buscar();
+            return;
+          }
+
+          if (!navigationState.continent) {
+            navigationState.continent = option;
+            navigationState.country = null;
+            navigationState.region = null;
+            activeFilter = { type: 'region', value: option };
+          } else if (!navigationState.country) {
+            navigationState.country = option;
+            navigationState.region = null;
+            activeFilter = { type: 'country', value: option };
+          } else {
+            navigationState.region = option;
+            activeFilter = { type: 'region', value: option };
+          }
+
+          renderCountryPanel();
+          ejecutarFiltroActual();
+        });
+        optionsBox.appendChild(button);
+      });
+
+      panel.appendChild(optionsBox);
+    }
+
+    function buildRegionIndexByCountry(countries) {
+      const byRegion = {};
+      countries.forEach(country => {
+        const name = country.name || country; 
+        if (!name) return;
+
+        const region = REGION_BY_COUNTRY[name] || 'Otro';
+        if (!byRegion[region]) {
+          byRegion[region] = [];
+        }
+
+        if (!byRegion[region].includes(name)) {
+          byRegion[region].push(name);
+        }
+      });
+
+      Object.keys(byRegion).forEach(region => {
+        byRegion[region].sort((a, b) => a.localeCompare(b));
+      });
+
+      Object.assign(COUNTRY_BY_REGION, byRegion);
+
+      Object.keys(byRegion).forEach(region => {
+        byRegion[region].forEach(country => {
+          COUNTRY_REGIONS[country] = ['Norte', 'Centro', 'Sur'];
+        });
+      });
+    }
+
+    async function loadCountries() {
+      try {
+        const res = await fetch('https://de1.api.radio-browser.info/json/countries');
+        if (!res.ok) throw new Error('Error cargando países');
+
+        const data = await res.json();
+        if (!Array.isArray(data)) return;
+
+        const uniqueCountries = [...new Set(data.map(item => item.name || item.country || item).filter(Boolean))]
+          .sort((a, b) => a.localeCompare(b));
+
+        allCountries = uniqueCountries;
+        buildRegionIndexByCountry(uniqueCountries);
+      } catch (error) {
+        allCountries = Object.keys(REGION_BY_COUNTRY).sort((a, b) => a.localeCompare(b));
+        buildRegionIndexByCountry(allCountries);
+      }
+    }
+
+    function detectUserCountry() {
+      const locale = (navigator.languages && navigator.languages[0]) || navigator.language || '';
+      const region = new Intl.Locale(locale).region || locale.split('-')[1] || '';
+      return COUNTRY_ALIASES[region.toUpperCase()] || null;
+    }
+
+    async function buscarRegion(region) {
+      const regionCountries = COUNTRY_BY_REGION[region] || [];
+      if (!regionCountries.length) return;
+
+      try {
+        const results = await Promise.all(
+          regionCountries.map(async (country) => {
+            const response = await fetch(`https://de1.api.radio-browser.info/json/stations/bycountry/${encodeURIComponent(country)}`);
+            if (!response.ok) return [];
+            return response.json();
+          })
+        );
+
+        const merged = Array.from(
+          new Map(
+            results.flat().map(item => [`${item.name || ''}-${item.url_resolved || ''}`, item])
+          ).values()
+        );
+
+        allStations = merged;
+        visibleCount = Math.min(PAGE_SIZE, allStations.length);
+        renderStationsChunk();
+      } catch (error) {
+        allStations = [];
+        visibleCount = 0;
+        document.getElementById('results').innerHTML = '<div class="empty-state">No se pudieron cargar las radios de esa región.</div>';
+      }
+    }
+
+    function normalizeMediaUrl(value) {
+      if (typeof value !== 'string') return '';
+      const clean = value.trim();
+      if (!clean || clean === 'null' || clean === 'undefined' || clean === 'about:blank') {
+        return '';
+      }
+      return clean;
+    }
+
+    function renderStationsChunk() {
+      const container = document.getElementById('results');
+      const nextItems = allStations.slice(0, visibleCount);
+
+      container.innerHTML = '';
+
+      if (!nextItems.length) {
+        container.innerHTML = '<div class="empty-state">No se encontraron radios para esta búsqueda.</div>';
+        return;
+      }
+
+      nextItems.forEach(station => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const img = document.createElement('img');
+        img.src = getStationImage(station);
+        img.alt = station.name || 'Radio';
+        img.onerror = () => {
+          img.src = defaultRadioImage;
+          img.onerror = null;
+        };
+
+        const name = document.createElement('h3');
+        name.textContent = station.name || 'Radio sin nombre';
+
+        const meta = document.createElement('p');
+        meta.textContent = `${station.country || 'Desconocido'} - ${station.language || 'Sin idioma'}`;
+
+        const button = document.createElement('button');
+        button.innerHTML = '<span aria-hidden="true">▶</span> Play';
+        button.style.display = 'flex';
+        button.style.alignItems = 'center';
+        button.style.justifyContent = 'center';
+        button.style.gap = '8px';
+        button.addEventListener('click', () => play(station.url_resolved || '', station.name || 'Radio'));
+
+        card.appendChild(img);
+        card.appendChild(name);
+        card.appendChild(meta);
+        card.appendChild(button);
+        container.appendChild(card);
+      });
+
+      if (visibleCount < allStations.length) {
+        const more = document.createElement('div');
+        more.className = 'empty-state';
+        more.textContent = 'Desliza hacia abajo para cargar más radios...';
+        container.appendChild(more);
+      }
+    }
+
+    function loadMoreStations() {
+      if (loadingMore || visibleCount >= allStations.length) return;
+
+      loadingMore = true;
+      visibleCount += PAGE_SIZE;
+      renderStationsChunk();
+      loadingMore = false;
+    }
+
+    function getStationImage(station) {
+      const safeFavicon = normalizeMediaUrl(station && station.favicon);
+      return safeFavicon || defaultRadioImage;
+    }
+
+    function getEndpoint({ query, type, value }) {
+      const q = (query || '').trim();
+      const filterType = type || 'search';
+      const filterValue = (value || '').trim();
+
+      if (q) {
+        return `https://de1.api.radio-browser.info/json/stations/search?name=${encodeURIComponent(q)}`;
+      }
+
+      if (filterType === 'country' && filterValue) {
+        return `https://de1.api.radio-browser.info/json/stations/bycountry/${encodeURIComponent(filterValue)}`;
+      }
+
+      if (filterType === 'language' && filterValue) {
+        return `https://de1.api.radio-browser.info/json/stations/bylanguage/${encodeURIComponent(filterValue)}`;
+      }
+
+      if (filterType === 'tag' && filterValue) {
+        return `https://de1.api.radio-browser.info/json/stations/bytag/${encodeURIComponent(filterValue)}`;
+      }
+
+      return 'https://de1.api.radio-browser.info/json/stations/search?name=radio';
+    }
+
+    function ejecutarFiltroActual() {
+      if (navigationState.country) {
+        activeFilter = { type: 'country', value: navigationState.country };
+        document.getElementById('query').value = navigationState.country;
+        buscar();
+        return;
+      }
+
+      if (navigationState.continent) {
+        activeFilter = { type: 'region', value: navigationState.continent };
+        document.getElementById('query').value = navigationState.continent;
+        buscarRegion(navigationState.continent);
+        return;
+      }
+
+      activeFilter = { type: 'search', value: '' };
+      document.getElementById('query').value = '';
+      buscar();
+    }
+
+    async function buscar() {
+      const q = (document.getElementById('query').value || '').trim();
+
+      if (!q && activeFilter.type === 'region' && activeFilter.value) {
+        await buscarRegion(activeFilter.value);
+        return;
+      }
+
+      const url = getEndpoint({
+        query: q,
+        type: activeFilter.type,
+        value: activeFilter.value
+      });
+
+      const container = document.getElementById('results');
+      container.innerHTML = '<div class="empty-state">Buscando radios...</div>';
+
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error('Error en la API');
+        }
+        const data = await res.json();
+
+        allStations = Array.isArray(data) ? data : [];
+        visibleCount = Math.min(PAGE_SIZE, allStations.length);
+        renderStationsChunk();
+      } catch (error) {
+        allStations = [];
+        visibleCount = 0;
+        container.innerHTML = '<div class="empty-state">No se pudo cargar la búsqueda. Revisa la conexión o el término.</div>';
+      }
+    }
+
+    function renderSelectedStationCard() {
+      const container = document.getElementById('selectedStationCard');
+      const panel = document.getElementById('selectedStationPanel');
+      if (!container || !panel) return;
+
+      if (!currentStation) {
+        panel.style.display = 'none';
+        container.innerHTML = '';
+        return;
+      }
+
+      panel.style.display = 'block';
+
+      const img = document.createElement('img');
+      img.src = getStationImage(currentStation);
+      img.alt = currentStation.name || 'Radio';
+      img.onerror = () => {
+        img.src = defaultRadioImage;
+        img.onerror = null;
+      };
+
+      const title = document.createElement('h3');
+      title.textContent = currentStation.name || 'Radio sin nombre';
+
+      const meta = document.createElement('p');
+      meta.textContent = `${currentStation.country || 'Desconocido'} • ${currentStation.language || 'Sin idioma'}`;
+
+      container.innerHTML = '';
+      container.appendChild(img);
+      container.appendChild(title);
+      container.appendChild(meta);
+    }
+
+    function renderHistoryList() {
+      const historyList = document.getElementById('historyList');
+      const panel = document.getElementById('historyPanel');
+      if (!historyList || !panel) return;
+
+      historyList.innerHTML = '';
+
+      if (!radioHistory.length) {
+        panel.style.display = 'none';
+        return;
+      }
+
+      panel.style.display = 'block';
+
+      radioHistory.forEach((station, index) => {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        item.addEventListener('click', () => {
+          if (station.url_resolved) {
+            play(station.url_resolved, station.name || 'Radio');
+          }
+        });
+
+        const img = document.createElement('img');
+        img.src = getStationImage(station);
+        img.alt = station.name || 'Radio';
+        img.onerror = () => {
+          img.src = defaultRadioImage;
+          img.onerror = null;
+        };
+
+        const copy = document.createElement('div');
+        copy.className = 'history-copy';
+        const name = document.createElement('strong');
+        name.textContent = station.name || 'Radio sin nombre';
+        const meta = document.createElement('span');
+        meta.textContent = station.country || 'Desconocido';
+        copy.appendChild(name);
+        copy.appendChild(meta);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-history';
+        removeBtn.textContent = '×';
+        removeBtn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          radioHistory.splice(index, 1);
+          renderHistoryList();
+        });
+
+        item.appendChild(img);
+        item.appendChild(copy);
+        item.appendChild(removeBtn);
+        historyList.appendChild(item);
+      });
+    }
+
+    function addToHistory(station) {
+      if (!station || !station.name) return;
+      const key = `${station.name}-${station.url_resolved || ''}`;
+      const exists = radioHistory.some(item => `${item.name}-${item.url_resolved || ''}` === key);
+      if (exists) return;
+
+      radioHistory.unshift(station);
+      radioHistory = radioHistory.slice(0, 10);
+      renderHistoryList();
+    }
+
+    function play(url, name) {
+      const safeUrl = normalizeMediaUrl(url);
+      if (!safeUrl) {
+        alert('Esta radio no tiene URL disponible.');
+        return;
+      }
+
+      const station = allStations.find(item => (item.url_resolved || '').trim() === safeUrl) || {
+        name,
+        url_resolved: safeUrl,
+        country: 'Desconocido',
+        language: 'Sin idioma',
+        favicon: ''
+      };
+
+      currentStation = station;
+      addToHistory(station);
+      renderSelectedStationCard();
+
+      const player = document.getElementById('player');
+      player.src = safeUrl;
+      player.play();
+    }
+
+    function applyHomeCountry() {
+      const queryInput = document.getElementById('query');
+      const detectedCountry = detectUserCountry();
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+
+      if (detectedCountry) {
+        navigationState.continent = null;
+        navigationState.country = detectedCountry;
+        navigationState.region = null;
+        activeFilter = { type: 'country', value: detectedCountry };
+        queryInput.value = detectedCountry;
+        document.querySelector('[data-filter-type="auto-country"]').classList.add('active');
+        renderCountryPanel();
+        buscar();
+        return;
+      }
+
+      document.querySelector('[data-filter-type="auto-country"]').classList.add('active');
+      document.getElementById('results').innerHTML = '<div class="empty-state">No se pudo detectar tu país desde el navegador.</div>';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const queryInput = document.getElementById('query');
+      const searchBtn = document.getElementById('searchBtn');
+      renderSelectedStationCard();
+      renderHistoryList();
+      loadCountries();
+      renderCountryPanel();
+      applyHomeCountry();
+
+      searchBtn.addEventListener('click', buscar);
+      queryInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          buscar();
+        }
+      });
+
+      document.querySelectorAll('.nav-btn').forEach(button => {
+        button.addEventListener('click', () => {
+          document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+          button.classList.add('active');
+
+          const filterType = button.dataset.filterType;
+          const filterValue = button.dataset.filterValue || '';
+
+          if (filterType === 'auto-country') {
+            const detectedCountry = detectUserCountry();
+            if (detectedCountry) {
+              navigationState.continent = null;
+              navigationState.country = detectedCountry;
+              navigationState.region = null;
+              activeFilter = { type: 'country', value: detectedCountry };
+              queryInput.value = detectedCountry;
+              renderCountryPanel();
+              buscar();
+            } else {
+              document.getElementById('results').innerHTML = '<div class="empty-state">No se pudo detectar tu país desde el navegador.</div>';
+            }
+            return;
+          }
+
+          if (filterType === 'region') {
+            navigationState.continent = null;
+            navigationState.country = null;
+            navigationState.region = null;
+            activeFilter = { type: 'region', value: '' };
+            queryInput.value = '';
+            renderCountryPanel();
+            return;
+          }
+
+          activeFilter = {
+            type: filterType,
+            value: filterValue
+          };
+
+          navigationState.continent = null;
+          navigationState.country = null;
+          navigationState.region = null;
+
+          if (filterType === 'search') {
+            queryInput.value = '';
+            renderCountryPanel();
+            buscar();
+            return;
+          }
+
+          if (filterType === 'tag') {
+            queryInput.value = filterValue || 'Rock';
+            renderCountryPanel();
+            buscar();
+            return;
+          }
+
+          if (filterType === 'language') {
+            queryInput.value = filterValue || 'Spanish';
+            renderCountryPanel();
+            buscar();
+            return;
+          }
+
+          queryInput.value = filterValue || '';
+          renderCountryPanel();
+          buscar();
+        });
+      });
+
+      const resultsBox = document.getElementById('results');
+
+      resultsBox.addEventListener('scroll', () => {
+        const nearBottom = resultsBox.scrollTop + resultsBox.clientHeight >= resultsBox.scrollHeight - 200;
+        if (nearBottom) {
+          loadMoreStations();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
