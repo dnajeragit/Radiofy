@@ -139,6 +139,35 @@
       background:rgba(96,165,250,0.18); border-color:rgba(147,197,253,0.35);
       box-shadow:0 0 0 3px rgba(96,165,250,0.08);
     }
+    .sidebar-footer {
+      margin-top:auto; padding-top:18px; border-top:1px solid rgba(255,255,255,0.08);
+    }
+    .favorites-section {
+      display:flex; flex-direction:column; gap:8px;
+    }
+    .favorites-title {
+      margin:0 0 8px; color:#8d8d8d; text-transform:uppercase; letter-spacing:0.14em;
+      font-size:10px; font-weight:700;
+    }
+    .favorite-item {
+      display:flex; align-items:center; gap:8px; padding:8px 8px; border-radius:8px;
+      background:rgba(15,23,42,0.28); border:1px solid rgba(148,163,184,0.08);
+      cursor:pointer; transition:0.2s ease;
+    }
+    .favorite-item:hover { background:rgba(30,41,59,0.7); }
+    .favorite-item img {
+      width:26px; height:26px; border-radius:6px; object-fit:cover; flex-shrink:0;
+      border:1px solid rgba(148,163,184,0.12);
+    }
+    .favorite-name {
+      flex:1; min-width:0; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .favorite-remove {
+      background:transparent; border:none; color:#94a3b8; cursor:pointer; font-size:13px; padding:0 2px;
+    }
+    .favorite-empty {
+      color:#94a3b8; font-size:12px; line-height:1.4; opacity:0.85;
+    }
     .main {
       flex:1; padding:18px 22px 22px; display:flex; flex-direction:column; min-height:0;
       background:linear-gradient(180deg, rgba(19,19,19,0.85), rgba(18,18,18,0.92));
@@ -238,6 +267,13 @@
           <span>Género</span>
         </button>
       </div>
+
+      <div class="sidebar-footer">
+        <div class="favorites-section">
+          <p class="favorites-title">Favoritos</p>
+          <div id="favoritesList"></div>
+        </div>
+      </div>
     </aside>
 
     <main class="main">
@@ -323,6 +359,7 @@
     let allCountries = [];
     let currentStation = null;
     let radioHistory = [];
+    let favorites = [];
     const PAGE_SIZE = 18;
     const POPULAR_GENRES = ['Rock', 'Jazz', 'Pop', 'Electrónica', 'Classic Rock', 'Metal', 'Hip-Hop', 'Latin', 'Salsa', 'Cumbia', 'Reggae', 'Funk', 'Soul', 'Blues'];
 
@@ -601,10 +638,31 @@
         button.style.gap = '8px';
         button.addEventListener('click', () => play(station.url_resolved || '', station.name || 'Radio'));
 
+        const favoriteToggle = document.createElement('button');
+        const isFavorite = favorites.some(item => getFavoriteKey(item) === getFavoriteKey(station));
+        favoriteToggle.textContent = isFavorite ? '★' : '☆';
+        favoriteToggle.title = isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos';
+        favoriteToggle.style.marginTop = '8px';
+        favoriteToggle.style.width = '100%';
+        favoriteToggle.style.background = 'rgba(148,163,184,0.08)';
+        favoriteToggle.style.color = '#e2e8f0';
+        favoriteToggle.style.border = '1px solid rgba(148,163,184,0.18)';
+        favoriteToggle.style.borderRadius = '8px';
+        favoriteToggle.style.padding = '8px 10px';
+        favoriteToggle.style.cursor = 'pointer';
+        favoriteToggle.addEventListener('click', (event) => {
+          event.stopPropagation();
+          toggleFavorite(station);
+          const nextIsFavorite = favorites.some(item => getFavoriteKey(item) === getFavoriteKey(station));
+          favoriteToggle.textContent = nextIsFavorite ? '★' : '☆';
+          favoriteToggle.title = nextIsFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos';
+        });
+
         card.appendChild(img);
         card.appendChild(name);
         card.appendChild(meta);
         card.appendChild(button);
+        card.appendChild(favoriteToggle);
         container.appendChild(card);
       });
 
@@ -808,6 +866,85 @@
       renderHistoryList();
     }
 
+    function getFavoriteKey(station) {
+      return `${station && station.name ? station.name : 'radio'}-${station && station.url_resolved ? station.url_resolved : ''}`;
+    }
+
+    function saveFavorites() {
+      localStorage.setItem('radiofy-favorites', JSON.stringify(favorites.slice(0, 8)));
+    }
+
+    function renderFavoritesList() {
+      const container = document.getElementById('favoritesList');
+      if (!container) return;
+
+      const favoriteStations = favorites.slice(0, 6);
+      container.innerHTML = '';
+
+      if (!favoriteStations.length) {
+        container.innerHTML = '<div class="favorite-empty">Guarda tus radios favoritas para volver rápido.</div>';
+        return;
+      }
+
+      favoriteStations.forEach((station) => {
+        const item = document.createElement('div');
+        item.className = 'favorite-item';
+        item.addEventListener('click', () => {
+          if (station.url_resolved) {
+            play(station.url_resolved, station.name || 'Radio');
+          }
+        });
+
+        const img = document.createElement('img');
+        img.src = getStationImage(station);
+        img.alt = station.name || 'Radio';
+        img.onerror = () => {
+          img.src = defaultRadioImage;
+          img.onerror = null;
+        };
+
+        const name = document.createElement('span');
+        name.className = 'favorite-name';
+        name.textContent = station.name || 'Radio sin nombre';
+
+        const remove = document.createElement('button');
+        remove.className = 'favorite-remove';
+        remove.textContent = '×';
+        remove.addEventListener('click', (event) => {
+          event.stopPropagation();
+          favorites = favorites.filter(item => getFavoriteKey(item) !== getFavoriteKey(station));
+          saveFavorites();
+          renderFavoritesList();
+        });
+
+        item.appendChild(img);
+        item.appendChild(name);
+        item.appendChild(remove);
+        container.appendChild(item);
+      });
+    }
+
+    function toggleFavorite(station) {
+      if (!station || !station.name) return;
+      const key = getFavoriteKey(station);
+      const exists = favorites.some(item => getFavoriteKey(item) === key);
+
+      if (exists) {
+        favorites = favorites.filter(item => getFavoriteKey(item) !== key);
+      } else {
+        favorites.unshift({
+          name: station.name || 'Radio sin nombre',
+          country: station.country || 'Desconocido',
+          language: station.language || 'Sin idioma',
+          url_resolved: station.url_resolved || '',
+          favicon: station.favicon || ''
+        });
+      }
+
+      saveFavorites();
+      renderFavoritesList();
+    }
+
     function play(url, name) {
       const safeUrl = normalizeMediaUrl(url);
       if (!safeUrl) {
@@ -856,8 +993,17 @@
     document.addEventListener('DOMContentLoaded', () => {
       const queryInput = document.getElementById('query');
       const searchBtn = document.getElementById('searchBtn');
+      const storedFavorites = localStorage.getItem('radiofy-favorites');
+      if (storedFavorites) {
+        try {
+          favorites = JSON.parse(storedFavorites);
+        } catch (error) {
+          favorites = [];
+        }
+      }
       renderSelectedStationCard();
       renderHistoryList();
+      renderFavoritesList();
       loadCountries();
       renderCountryPanel();
       applyHomeCountry();
