@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Radiofy</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230b1220'/%3E%3Ccircle cx='32' cy='24' r='11' fill='%232563eb'/%3E%3Ccircle cx='32' cy='24' r='4' fill='%230b1220'/%3E%3Crect x='18' y='38' width='28' height='4' rx='2' fill='%2360a5fa'/%3E%3C/svg%3E" />
   <style>
@@ -241,6 +242,96 @@
     }
     .player audio {
       flex:1; max-width:760px; filter: invert(0.06) saturate(1.2) brightness(1.05);
+    }
+
+    @media (max-width: 980px) {
+      body {
+        overflow:auto;
+      }
+
+      .app {
+        flex-direction:column;
+        height:auto;
+        min-height:100vh;
+      }
+
+      .sidebar,
+      .right-rail {
+        width:100%;
+        border-right:none;
+        border-left:none;
+      }
+
+      .sidebar {
+        border-bottom:1px solid rgba(255,255,255,0.08);
+      }
+
+      .right-rail {
+        border-top:1px solid rgba(255,255,255,0.08);
+        padding:14px 12px 90px;
+      }
+
+      .main {
+        padding:14px 12px 90px;
+      }
+
+      .results {
+        padding-bottom:20px;
+      }
+
+      .card {
+        width:calc(50% - 8px);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .sidebar {
+        padding:16px 12px;
+      }
+
+      .sidebar-header {
+        margin-bottom:14px;
+      }
+
+      .nav {
+        gap:6px;
+      }
+
+      .nav-btn {
+        padding:10px 10px;
+        font-size:13px;
+      }
+
+      .search {
+        flex-direction:column;
+        align-items:stretch;
+        gap:8px;
+        padding:8px;
+      }
+
+      .search button {
+        width:100%;
+      }
+
+      .results {
+        gap:12px;
+      }
+
+      .card {
+        width:100%;
+      }
+
+      .player {
+        padding:8px 12px;
+      }
+
+      .player audio {
+        max-width:none;
+      }
+
+      .favorite-item {
+        padding:7px 8px;
+      }
     }
   </style>
 </head>
