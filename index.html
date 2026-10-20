@@ -37,8 +37,14 @@
       font-size:21px; font-weight:700; letter-spacing:-0.04em; color:#f8fafc; margin:0;
     }
     .right-rail {
-      width:300px; background:rgba(11, 17, 32, 0.45); border-left:1px solid rgba(255,255,255,0.08);
-      padding:18px 16px 16px; flex-shrink:0; display:flex; flex-direction:column; gap:16px;
+      width:0; min-width:0; padding:0; border:0; overflow:hidden; opacity:0; visibility:hidden;
+      transform:translateX(18px); pointer-events:none; flex-shrink:0; display:flex; flex-direction:column; gap:16px;
+      background:rgba(11, 17, 32, 0.45);
+      transition:width 0.32s ease, padding 0.32s ease, border-width 0.32s ease, opacity 0.24s ease, transform 0.32s ease, visibility 0.32s;
+    }
+    .right-rail.has-played {
+      width:300px; padding:18px 16px 16px; border-left:1px solid rgba(255,255,255,0.08);
+      opacity:1; visibility:visible; transform:translateX(0); pointer-events:auto;
     }
     .panel-card {
       background:linear-gradient(180deg, rgba(31,41,55,0.9), rgba(17,24,39,0.8));
@@ -71,6 +77,14 @@
     }
     .now-playing-card p {
       margin:0; color:#cbd5e1; font-size:12px;
+    }
+    .now-playing-actions { display:flex; gap:8px; margin-top:2px; }
+    .now-playing-actions button {
+      flex:1; min-width:0; padding:8px 6px; border:1px solid rgba(148,163,184,0.18); border-radius:8px;
+      background:rgba(148,163,184,0.08); color:#e2e8f0; font-size:12px; font-weight:600; cursor:pointer;
+    }
+    .now-playing-actions .now-playing-schedule {
+      background:rgba(37,99,235,0.18); border-color:rgba(96,165,250,0.28);
     }
     .history-list {
       display:flex; flex-direction:column; gap:8px; max-height:calc(100vh - 360px); overflow-y:auto;
@@ -231,6 +245,14 @@
     .card button:hover {
       transform:translateY(-1px); box-shadow:inset 0 0 0 1px rgba(191,219,254,0.16), 0 8px 14px rgba(37,99,235,0.16);
     }
+    .card-actions { display:flex; gap:8px; margin-top:8px; }
+    .card .card-actions button { flex:1; width:auto; margin:0; padding:7px 8px; font-size:12px; }
+    .card .card-actions .favorite-toggle {
+      background:rgba(148,163,184,0.08); color:#e2e8f0; border:1px solid rgba(148,163,184,0.18);
+    }
+    .card .card-actions .schedule-station-button {
+      background:rgba(37,99,235,0.18); border:1px solid rgba(96,165,250,0.28);
+    }
     .empty-state {
       background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05);
       color:#ddd; padding:20px; border-radius:10px; width:100%;
@@ -243,6 +265,75 @@
     .player audio {
       flex:1; max-width:760px; filter: invert(0.06) saturate(1.2) brightness(1.05);
     }
+    .schedule-backdrop {
+      position:fixed; inset:0; z-index:20; background:rgba(2,6,23,0.68); opacity:0; pointer-events:none;
+      transition:opacity 0.2s ease;
+    }
+    .schedule-backdrop.open { opacity:1; pointer-events:auto; }
+    .schedule-drawer {
+      position:fixed; top:0; right:0; z-index:21; width:min(420px, 100%); height:100vh; overflow-y:auto;
+      padding:22px; background:linear-gradient(180deg, #111827, #0b1220); border-left:1px solid rgba(148,163,184,0.2);
+      box-shadow:-20px 0 50px rgba(0,0,0,0.35); transform:translateX(100%); visibility:hidden;
+      transition:transform 0.24s ease, visibility 0.24s;
+    }
+    .schedule-drawer.open { transform:translateX(0); visibility:visible; }
+    .schedule-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .schedule-header h2 { margin:0; font-size:20px; }
+    .schedule-close {
+      width:34px; height:34px; border:1px solid rgba(148,163,184,0.2); border-radius:9px; background:rgba(148,163,184,0.08);
+      color:#e2e8f0; font-size:22px; cursor:pointer;
+    }
+    .schedule-description, .schedule-note { color:#94a3b8; font-size:12px; line-height:1.5; }
+    .schedule-form {
+      margin:18px 0; padding:14px; border:1px solid rgba(96,165,250,0.25); border-radius:12px;
+      background:rgba(30,64,175,0.1);
+    }
+    .schedule-form[hidden] { display:none; }
+    .schedule-selected { margin:0 0 14px; color:#bfdbfe; font-size:14px; font-weight:700; }
+    .schedule-form label { display:block; margin-bottom:7px; color:#cbd5e1; font-size:12px; font-weight:600; }
+    .schedule-form input[type="time"] {
+      width:100%; padding:10px 12px; border:1px solid rgba(148,163,184,0.25); border-radius:8px;
+      background:#0f172a; color:#fff; font:inherit;
+    }
+    .schedule-days { display:grid; grid-template-columns:repeat(7, 1fr); gap:5px; margin:10px 0 14px; }
+    .schedule-day { position:relative; }
+    .schedule-day input { position:absolute; opacity:0; }
+    .schedule-day span {
+      display:block; padding:8px 2px; border:1px solid rgba(148,163,184,0.2); border-radius:7px;
+      color:#cbd5e1; text-align:center; font-size:11px; cursor:pointer;
+    }
+    .schedule-day input:checked + span { border-color:#60a5fa; background:rgba(37,99,235,0.32); color:#eff6ff; }
+    .schedule-day input:focus-visible + span { outline:2px solid #93c5fd; outline-offset:2px; }
+    .schedule-save {
+      width:100%; padding:10px 12px; border:0; border-radius:8px; background:#2563eb; color:#fff;
+      font-weight:700; cursor:pointer;
+    }
+    .schedule-status { min-height:18px; margin:8px 0 0; color:#93c5fd; font-size:12px; line-height:1.45; }
+    .schedule-day-picker { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px; margin:12px 0 16px; }
+    .schedule-day-option {
+      padding:8px 4px; border:1px solid rgba(148,163,184,0.16); border-radius:8px;
+      background:rgba(15,23,42,0.62); color:#cbd5e1; cursor:pointer; font-size:11px;
+    }
+    .schedule-day-option[aria-pressed="true"] {
+      border-color:rgba(96,165,250,0.55); background:rgba(37,99,235,0.28); color:#eff6ff;
+    }
+    .schedule-agenda-heading { margin:0 0 8px; color:#cbd5e1; font-size:13px; }
+    .schedule-list { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+    .schedule-item {
+      display:grid; grid-template-columns:48px 12px minmax(0, 1fr) auto; align-items:center; gap:8px;
+      padding:4px 0; border:0; background:transparent;
+    }
+    .schedule-time-label { color:#93c5fd; font-size:12px; font-weight:700; text-align:right; }
+    .schedule-item-marker { width:9px; height:9px; border:2px solid #60a5fa; border-radius:50%; background:#0b1220; }
+    .schedule-item-copy { min-width:0; padding:10px; border:1px solid rgba(148,163,184,0.12); border-radius:9px; background:rgba(15,23,42,0.62); }
+    .schedule-item-copy strong, .schedule-item-copy span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .schedule-item-copy strong { color:#f8fafc; font-size:13px; }
+    .schedule-item-copy span { margin-top:4px; color:#94a3b8; font-size:11px; }
+    .schedule-remove {
+      flex-shrink:0; padding:6px 8px; border:1px solid rgba(248,113,113,0.24); border-radius:7px;
+      background:rgba(127,29,29,0.2); color:#fca5a5; cursor:pointer; font-size:11px;
+    }
+    .schedule-list-empty { grid-column:1 / -1; margin:0; padding:14px; border:1px dashed rgba(148,163,184,0.2); border-radius:9px; color:#94a3b8; font-size:12px; }
 
     @media (max-width: 980px) {
       body {
@@ -269,6 +360,15 @@
       .right-rail {
         border-top:1px solid rgba(255,255,255,0.08);
         padding:14px 12px 90px;
+      }
+
+      .right-rail:not(.has-played) {
+        width:100%; max-height:0; padding:0; border:0; transform:translateY(-12px);
+      }
+
+      .right-rail.has-played {
+        width:100%; max-height:100vh; border-top:1px solid rgba(255,255,255,0.08);
+        transform:translateY(0);
       }
 
       .main {
@@ -332,6 +432,8 @@
       .favorite-item {
         padding:7px 8px;
       }
+
+      .schedule-drawer { padding:18px 14px; }
     }
   </style>
 </head>
@@ -357,6 +459,10 @@
           <span class="nav-icon" aria-hidden="true"></span>
           <span>Género</span>
         </button>
+        <button class="nav-btn" data-action="open-schedules" type="button">
+          <span class="nav-icon" aria-hidden="true"></span>
+          <span>Programación</span>
+        </button>
       </div>
 
       <div class="sidebar-footer">
@@ -376,7 +482,7 @@
       <div id="results" class="results"></div>
     </main>
 
-    <aside class="right-rail">
+    <aside class="right-rail" aria-hidden="true">
       <div id="selectedStationPanel" class="panel-card">
         <p class="panel-title">Estas escuchando...</p>
         <div id="selectedStationCard" class="now-playing-card"></div>
@@ -392,6 +498,37 @@
   <div class="player">
     <audio id="player" controls></audio>
   </div>
+
+  <div id="scheduleBackdrop" class="schedule-backdrop" aria-hidden="true"></div>
+  <aside id="scheduleDrawer" class="schedule-drawer" role="dialog" aria-modal="true" aria-labelledby="scheduleTitle" aria-hidden="true" inert>
+    <div class="schedule-header">
+      <h2 id="scheduleTitle">Programación</h2>
+      <button id="closeScheduleDrawer" class="schedule-close" type="button" aria-label="Cerrar programación">×</button>
+    </div>
+    <p class="schedule-description">Elige una hora y los días en que quieres escuchar cada radio. Radiofy debe permanecer abierto para iniciar la reproducción.</p>
+    <form id="scheduleForm" class="schedule-form" hidden>
+      <p id="scheduleSelectedStation" class="schedule-selected"></p>
+      <label for="scheduleTime">Hora de inicio</label>
+      <input id="scheduleTime" name="time" type="time" required>
+      <label>Días de la semana</label>
+      <div class="schedule-days">
+        <label class="schedule-day"><input type="checkbox" name="days" value="1"><span>Lun</span></label>
+        <label class="schedule-day"><input type="checkbox" name="days" value="2"><span>Mar</span></label>
+        <label class="schedule-day"><input type="checkbox" name="days" value="3"><span>Mié</span></label>
+        <label class="schedule-day"><input type="checkbox" name="days" value="4"><span>Jue</span></label>
+        <label class="schedule-day"><input type="checkbox" name="days" value="5"><span>Vie</span></label>
+        <label class="schedule-day"><input type="checkbox" name="days" value="6"><span>Sáb</span></label>
+        <label class="schedule-day"><input type="checkbox" name="days" value="0"><span>Dom</span></label>
+      </div>
+      <button class="schedule-save" type="submit">Guardar programación</button>
+      <p id="scheduleStatus" class="schedule-status" role="status" aria-live="polite"></p>
+    </form>
+    <p id="scheduleEmptyFormHint" class="schedule-note">Para agregar una radio, pulsa «Programar» en su tarjeta. También puedes elegir la radio que estás escuchando.</p>
+    <h3 class="panel-title">Agenda semanal</h3>
+    <div id="scheduleDayPicker" class="schedule-day-picker" aria-label="Seleccionar día"></div>
+    <h4 id="scheduleAgendaHeading" class="schedule-agenda-heading"></h4>
+    <div id="scheduleList" class="schedule-list"></div>
+  </aside>
 
   <script>
     const defaultRadioImage = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
@@ -451,7 +588,13 @@
     let currentStation = null;
     let radioHistory = [];
     let favorites = [];
+    let radioSchedules = [];
+    let scheduleStation = null;
+    let selectedScheduleDay = new Date().getDay();
     const PAGE_SIZE = 18;
+    const SCHEDULE_STORAGE_KEY = 'radiofy-schedules';
+    const WEEKDAY_NAMES = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const WEEKDAY_NAMES_CAPITALIZED = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const POPULAR_GENRES = ['Rock', 'Jazz', 'Pop', 'Electrónica', 'Classic Rock', 'Metal', 'Hip-Hop', 'Latin', 'Salsa', 'Cumbia', 'Reggae', 'Funk', 'Soul', 'Blues'];
 
     const navigationState = {
@@ -733,27 +876,34 @@
         const isFavorite = favorites.some(item => getFavoriteKey(item) === getFavoriteKey(station));
         favoriteToggle.textContent = isFavorite ? '★' : '☆';
         favoriteToggle.title = isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos';
-        favoriteToggle.style.marginTop = '8px';
-        favoriteToggle.style.width = '100%';
-        favoriteToggle.style.background = 'rgba(148,163,184,0.08)';
-        favoriteToggle.style.color = '#e2e8f0';
-        favoriteToggle.style.border = '1px solid rgba(148,163,184,0.18)';
-        favoriteToggle.style.borderRadius = '8px';
-        favoriteToggle.style.padding = '8px 10px';
-        favoriteToggle.style.cursor = 'pointer';
+        favoriteToggle.className = 'favorite-toggle';
+        favoriteToggle.type = 'button';
+        favoriteToggle.setAttribute('aria-label', isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos');
         favoriteToggle.addEventListener('click', (event) => {
           event.stopPropagation();
           toggleFavorite(station);
           const nextIsFavorite = favorites.some(item => getFavoriteKey(item) === getFavoriteKey(station));
           favoriteToggle.textContent = nextIsFavorite ? '★' : '☆';
           favoriteToggle.title = nextIsFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos';
+          favoriteToggle.setAttribute('aria-label', nextIsFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos');
         });
+
+        const scheduleButton = document.createElement('button');
+        scheduleButton.className = 'schedule-station-button';
+        scheduleButton.type = 'button';
+        scheduleButton.textContent = 'Programar';
+        scheduleButton.addEventListener('click', () => openScheduleDrawer(station));
+
+        const cardActions = document.createElement('div');
+        cardActions.className = 'card-actions';
+        cardActions.appendChild(favoriteToggle);
+        cardActions.appendChild(scheduleButton);
 
         card.appendChild(img);
         card.appendChild(name);
         card.appendChild(meta);
         card.appendChild(button);
-        card.appendChild(favoriteToggle);
+        card.appendChild(cardActions);
         container.appendChild(card);
       });
 
@@ -884,10 +1034,33 @@
       const meta = document.createElement('p');
       meta.textContent = `${currentStation.country || 'Desconocido'} • ${currentStation.language || 'Sin idioma'}`;
 
+      const actions = document.createElement('div');
+      actions.className = 'now-playing-actions';
+
+      const favoriteButton = document.createElement('button');
+      const isFavorite = favorites.some(item => getFavoriteKey(item) === getFavoriteKey(currentStation));
+      favoriteButton.type = 'button';
+      favoriteButton.textContent = isFavorite ? '★ Favorito' : '☆ Favorito';
+      favoriteButton.setAttribute('aria-label', isFavorite ? 'Quitar radio de favoritos' : 'Agregar radio a favoritos');
+      favoriteButton.addEventListener('click', () => {
+        toggleFavorite(currentStation);
+        renderSelectedStationCard();
+      });
+
+      const scheduleButton = document.createElement('button');
+      scheduleButton.className = 'now-playing-schedule';
+      scheduleButton.type = 'button';
+      scheduleButton.textContent = 'Programar';
+      scheduleButton.addEventListener('click', () => openScheduleDrawer(currentStation));
+
+      actions.appendChild(favoriteButton);
+      actions.appendChild(scheduleButton);
+
       container.innerHTML = '';
       container.appendChild(img);
       container.appendChild(title);
       container.appendChild(meta);
+      container.appendChild(actions);
     }
 
     function renderHistoryList() {
@@ -944,6 +1117,221 @@
         item.appendChild(removeBtn);
         historyList.appendChild(item);
       });
+    }
+
+    function showScheduleStatus(message) {
+      const status = document.getElementById('scheduleStatus');
+      if (status) status.textContent = message;
+    }
+
+    function persistSchedules() {
+      try {
+        localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(radioSchedules));
+        return true;
+      } catch (error) {
+        console.error('No se pudo guardar la programación de radios.', error);
+        showScheduleStatus('No se pudo guardar la programación en este navegador.');
+        return false;
+      }
+    }
+
+    function loadSchedules() {
+      const storedSchedules = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+      if (!storedSchedules) return;
+
+      try {
+        const parsedSchedules = JSON.parse(storedSchedules);
+        if (!Array.isArray(parsedSchedules)) throw new Error('El formato de programación no es válido.');
+        radioSchedules = parsedSchedules.filter(schedule =>
+          schedule &&
+          typeof schedule.id === 'string' &&
+          typeof schedule.time === 'string' &&
+          Array.isArray(schedule.days) &&
+          schedule.days.every(day => Number.isInteger(day) && day >= 0 && day <= 6) &&
+          schedule.station &&
+          typeof schedule.station.name === 'string' &&
+          typeof schedule.station.url_resolved === 'string'
+        );
+      } catch (error) {
+        console.error('No se pudo leer la programación guardada.', error);
+        showScheduleStatus('No se pudo leer la programación guardada.');
+      }
+    }
+
+    function setScheduleStation(station) {
+      scheduleStation = station;
+      const form = document.getElementById('scheduleForm');
+      const hint = document.getElementById('scheduleEmptyFormHint');
+      const selectedStation = document.getElementById('scheduleSelectedStation');
+      form.hidden = !station;
+      hint.hidden = Boolean(station);
+
+      if (!station) return;
+
+      selectedStation.textContent = station.name || 'Radio sin nombre';
+      const nextHour = new Date();
+      nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
+      document.getElementById('scheduleTime').value =
+        `${String(nextHour.getHours()).padStart(2, '0')}:${String(nextHour.getMinutes()).padStart(2, '0')}`;
+      form.querySelectorAll('input[name="days"]').forEach(day => {
+        day.checked = false;
+      });
+      showScheduleStatus('');
+    }
+
+    function openScheduleDrawer(station = currentStation) {
+      setScheduleStation(station);
+      renderScheduleList();
+      const drawer = document.getElementById('scheduleDrawer');
+      const backdrop = document.getElementById('scheduleBackdrop');
+      drawer.classList.add('open');
+      backdrop.classList.add('open');
+      drawer.setAttribute('aria-hidden', 'false');
+      drawer.inert = false;
+      backdrop.setAttribute('aria-hidden', 'false');
+      document.getElementById('closeScheduleDrawer').focus();
+    }
+
+    function closeScheduleDrawer() {
+      document.getElementById('scheduleDrawer').classList.remove('open');
+      document.getElementById('scheduleBackdrop').classList.remove('open');
+      document.getElementById('scheduleDrawer').setAttribute('aria-hidden', 'true');
+      document.getElementById('scheduleDrawer').inert = true;
+      document.getElementById('scheduleBackdrop').setAttribute('aria-hidden', 'true');
+    }
+
+    function renderScheduleList() {
+      const dayPicker = document.getElementById('scheduleDayPicker');
+      const container = document.getElementById('scheduleList');
+      const heading = document.getElementById('scheduleAgendaHeading');
+      dayPicker.innerHTML = '';
+      container.innerHTML = '';
+
+      const daysInOrder = [1, 2, 3, 4, 5, 6, 0];
+      daysInOrder.forEach(day => {
+        const button = document.createElement('button');
+        button.className = 'schedule-day-option';
+        button.type = 'button';
+        button.textContent = WEEKDAY_NAMES_CAPITALIZED[day];
+        button.setAttribute('aria-pressed', String(selectedScheduleDay === day));
+        button.addEventListener('click', () => {
+          selectedScheduleDay = day;
+          renderScheduleList();
+        });
+        dayPicker.appendChild(button);
+      });
+
+      heading.textContent = WEEKDAY_NAMES_CAPITALIZED[selectedScheduleDay];
+      const daySchedules = radioSchedules
+        .filter(schedule => schedule.days.includes(selectedScheduleDay))
+        .sort((first, second) => first.time.localeCompare(second.time));
+
+      if (!daySchedules.length) {
+        const empty = document.createElement('p');
+        empty.className = 'schedule-list-empty';
+        empty.textContent = `No hay radios programadas para el ${WEEKDAY_NAMES[selectedScheduleDay]}.`;
+        container.appendChild(empty);
+        return;
+      }
+
+      daySchedules.forEach(schedule => {
+        const item = document.createElement('div');
+        item.className = 'schedule-item';
+        const time = document.createElement('span');
+        time.className = 'schedule-time-label';
+        time.textContent = schedule.time;
+        const marker = document.createElement('span');
+        marker.className = 'schedule-item-marker';
+        marker.setAttribute('aria-hidden', 'true');
+        const copy = document.createElement('div');
+        copy.className = 'schedule-item-copy';
+        const stationName = document.createElement('strong');
+        stationName.textContent = schedule.station.name || 'Radio sin nombre';
+        const details = document.createElement('span');
+        details.textContent = `Radio programada · ${schedule.days.length > 1 ? `${schedule.days.length} días` : WEEKDAY_NAMES[selectedScheduleDay]}`;
+        const remove = document.createElement('button');
+        remove.className = 'schedule-remove';
+        remove.type = 'button';
+        remove.textContent = 'Borrar';
+        remove.setAttribute('aria-label', `Borrar programación de ${stationName.textContent}`);
+        remove.addEventListener('click', () => {
+          const scheduleIndex = radioSchedules.findIndex(item => item.id === schedule.id);
+          const [removedSchedule] = radioSchedules.splice(scheduleIndex, 1);
+          if (!persistSchedules()) {
+            radioSchedules.splice(scheduleIndex, 0, removedSchedule);
+            renderScheduleList();
+            return;
+          }
+          renderScheduleList();
+          showScheduleStatus('Programación eliminada.');
+        });
+
+        copy.appendChild(stationName);
+        copy.appendChild(details);
+        item.appendChild(time);
+        item.appendChild(marker);
+        item.appendChild(copy);
+        item.appendChild(remove);
+        container.appendChild(item);
+      });
+    }
+
+    function createSchedule(event) {
+      event.preventDefault();
+      if (!scheduleStation) return;
+
+      const time = document.getElementById('scheduleTime').value;
+      const days = Array.from(document.querySelectorAll('#scheduleForm input[name="days"]:checked'))
+        .map(input => Number(input.value));
+      const url = normalizeMediaUrl(scheduleStation.url_resolved);
+
+      if (!time || !days.length || !url) {
+        showScheduleStatus(!days.length
+          ? 'Selecciona al menos un día de la semana.'
+          : 'Esta radio no tiene una dirección de audio válida.');
+        return;
+      }
+
+      const schedule = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        time,
+        days,
+        station: {
+          name: scheduleStation.name || 'Radio sin nombre',
+          country: scheduleStation.country || 'Desconocido',
+          language: scheduleStation.language || 'Sin idioma',
+          url_resolved: url,
+          favicon: scheduleStation.favicon || ''
+        },
+        lastTriggeredDate: ''
+      };
+      radioSchedules.push(schedule);
+      if (!persistSchedules()) {
+        radioSchedules.pop();
+        return;
+      }
+
+      renderScheduleList();
+      showScheduleStatus('Programación guardada.');
+    }
+
+    function checkRadioSchedules() {
+      const now = new Date();
+      const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      let triggered = false;
+
+      radioSchedules.forEach(schedule => {
+        if (schedule.time !== time || !schedule.days.includes(now.getDay()) || schedule.lastTriggeredDate === date) return;
+        schedule.lastTriggeredDate = date;
+        triggered = true;
+        play(schedule.station.url_resolved, schedule.station.name, schedule.station);
+      });
+
+      if (triggered) {
+        persistSchedules();
+        showScheduleStatus('Iniciando la radio programada. Si no comienza, revisa los permisos de reproducción del navegador.');
+      }
     }
 
     function addToHistory(station) {
@@ -1036,14 +1424,14 @@
       renderFavoritesList();
     }
 
-    function play(url, name) {
+    function play(url, name, scheduledStation = null) {
       const safeUrl = normalizeMediaUrl(url);
       if (!safeUrl) {
         alert('Esta radio no tiene URL disponible.');
         return;
       }
 
-      const station = allStations.find(item => (item.url_resolved || '').trim() === safeUrl) || {
+      const station = scheduledStation || allStations.find(item => (item.url_resolved || '').trim() === safeUrl) || {
         name,
         url_resolved: safeUrl,
         country: 'Desconocido',
@@ -1057,7 +1445,10 @@
 
       const player = document.getElementById('player');
       player.src = safeUrl;
-      player.play();
+      player.play().catch(error => {
+        console.error('No se pudo iniciar la reproducción de la radio.', error);
+        showScheduleStatus('El navegador bloqueó la reproducción automática. Interactúa con Radiofy y pulsa Play.');
+      });
     }
 
     function applyHomeCountry() {
@@ -1084,6 +1475,12 @@
     document.addEventListener('DOMContentLoaded', () => {
       const queryInput = document.getElementById('query');
       const searchBtn = document.getElementById('searchBtn');
+      const rightRail = document.querySelector('.right-rail');
+      document.getElementById('player').addEventListener('playing', () => {
+        rightRail.classList.add('has-played');
+        rightRail.setAttribute('aria-hidden', 'false');
+      });
+      loadSchedules();
       const storedFavorites = localStorage.getItem('radiofy-favorites');
       if (storedFavorites) {
         try {
@@ -1095,9 +1492,21 @@
       renderSelectedStationCard();
       renderHistoryList();
       renderFavoritesList();
+      renderScheduleList();
       loadCountries();
       renderCountryPanel();
       applyHomeCountry();
+      window.setInterval(checkRadioSchedules, 15000);
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) checkRadioSchedules();
+      });
+
+      document.getElementById('scheduleForm').addEventListener('submit', createSchedule);
+      document.getElementById('closeScheduleDrawer').addEventListener('click', closeScheduleDrawer);
+      document.getElementById('scheduleBackdrop').addEventListener('click', closeScheduleDrawer);
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') closeScheduleDrawer();
+      });
 
       searchBtn.addEventListener('click', buscar);
       queryInput.addEventListener('keydown', (event) => {
@@ -1108,6 +1517,11 @@
 
       document.querySelectorAll('.nav-btn').forEach(button => {
         button.addEventListener('click', () => {
+          if (button.dataset.action === 'open-schedules') {
+            openScheduleDrawer();
+            return;
+          }
+
           document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
           button.classList.add('active');
 
