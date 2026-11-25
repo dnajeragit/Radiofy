@@ -1,4 +1,4 @@
-import { state, SCHEDULE_STORAGE_KEY, WEEKDAY_NAMES, WEEKDAY_NAMES_CAPITALIZED } from './state.js';
+import { state, SCHEDULE_STORAGE_KEY, WEEKDAY_NAMES, WEEKDAY_NAMES_CAPITALIZED, truncateStationName } from './state.js';
 import { actions } from './actions.js';
 
 function showScheduleStatus(message) {
@@ -50,7 +50,9 @@ function setScheduleStation(station) {
 
   if (!station) return;
 
-  selectedStation.textContent = station.name || 'Radio sin nombre';
+  const fullName = station.name || 'Radio sin nombre';
+  selectedStation.textContent = truncateStationName(fullName);
+  selectedStation.title = fullName;
   const nextHour = new Date();
   nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
   document.getElementById('scheduleTime').value =
@@ -128,7 +130,9 @@ function renderScheduleList() {
     const copy = document.createElement('div');
     copy.className = 'schedule-item-copy';
     const stationName = document.createElement('strong');
-    stationName.textContent = schedule.station.name || 'Radio sin nombre';
+    const fullName = schedule.station.name || 'Radio sin nombre';
+    stationName.textContent = truncateStationName(fullName);
+    stationName.title = fullName;
     const details = document.createElement('span');
     details.textContent = `Radio programada · ${schedule.days.length > 1 ? `${schedule.days.length} días` : WEEKDAY_NAMES[state.selectedScheduleDay]}`;
     const remove = document.createElement('button');

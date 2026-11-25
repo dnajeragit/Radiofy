@@ -1,4 +1,4 @@
-import { state, defaultRadioImage } from './state.js';
+import { state, defaultRadioImage, truncateStationName } from './state.js';
 import { actions } from './actions.js';
 
 function renderSelectedStationCard() {
@@ -23,7 +23,9 @@ function renderSelectedStationCard() {
   };
 
   const title = document.createElement('h3');
-  title.textContent = state.currentStation.name || 'Radio sin nombre';
+  const fullName = state.currentStation.name || 'Radio sin nombre';
+  title.textContent = truncateStationName(fullName);
+  title.title = fullName;
 
   const meta = document.createElement('p');
   meta.textContent = `${state.currentStation.country || 'Desconocido'} • ${state.currentStation.language || 'Sin idioma'}`;
@@ -91,7 +93,9 @@ function renderHistoryList() {
     const copy = document.createElement('div');
     copy.className = 'history-copy';
     const name = document.createElement('strong');
-    name.textContent = station.name || 'Radio sin nombre';
+    const fullName = station.name || 'Radio sin nombre';
+    name.textContent = truncateStationName(fullName);
+    name.title = fullName;
     const meta = document.createElement('span');
     meta.textContent = station.country || 'Desconocido';
     copy.appendChild(name);

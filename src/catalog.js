@@ -1,4 +1,4 @@
-import { state, REGION_BY_COUNTRY, COUNTRY_ALIASES, POPULAR_GENRES, PAGE_SIZE, defaultRadioImage } from './state.js';
+import { state, REGION_BY_COUNTRY, COUNTRY_ALIASES, POPULAR_GENRES, PAGE_SIZE, defaultRadioImage, truncateStationName } from './state.js';
 import { actions } from './actions.js';
 
 function getOptionsForState() {
@@ -257,7 +257,9 @@ function renderStationsChunk() {
     };
 
     const name = document.createElement('h3');
-    name.textContent = station.name || 'Radio sin nombre';
+    const fullName = station.name || 'Radio sin nombre';
+    name.textContent = truncateStationName(fullName);
+    name.title = fullName;
 
     const meta = document.createElement('p');
     meta.textContent = `${station.country || 'Desconocido'} - ${station.language || 'Sin idioma'}`;

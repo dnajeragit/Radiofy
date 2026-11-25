@@ -50,6 +50,11 @@ export const WEEKDAY_NAMES = ['domingo', 'lunes', 'martes', 'miércoles', 'jueve
 export const WEEKDAY_NAMES_CAPITALIZED = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 export const POPULAR_GENRES = ['Rock', 'Jazz', 'Pop', 'Electrónica', 'Classic Rock', 'Metal', 'Hip-Hop', 'Latin', 'Salsa', 'Cumbia', 'Reggae', 'Funk', 'Soul', 'Blues'];
 
+export function truncateStationName(name) {
+  const characters = Array.from(name);
+  return characters.length > 45 ? `${characters.slice(0, 42).join('')}...` : name;
+}
+
 export const state = {
   COUNTRY_BY_REGION: {},
   COUNTRY_REGIONS: {},

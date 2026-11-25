@@ -224,10 +224,18 @@
     .card {
       background:linear-gradient(180deg, #1f1f1f, #181818); padding:14px; border-radius:10px; width:220px;
       border:1px solid rgba(255,255,255,0.04); box-shadow:0 8px 18px rgba(0,0,0,0.22);
+      display:flex; flex-direction:column;
     }
     .card img { width:100%; height:120px; object-fit:cover; border-radius:8px; background:#111; margin-bottom:12px; }
-    .card h3 { margin:0 0 8px; font-size:16px; }
-    .card p { margin:0 0 12px; color:#b3b3b3; font-size:13px; }
+    .card h3 {
+      display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden;
+      height:3.6em; margin:0 0 8px; font-size:16px; line-height:1.2; overflow-wrap:anywhere;
+    }
+    .card p {
+      display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;
+      height:2.8em; margin:0 0 12px; color:#b3b3b3; font-size:13px; line-height:1.4; overflow-wrap:anywhere;
+    }
+    .card > button { margin-top:auto; }
     .card button {
       width:100%; background:linear-gradient(180deg, rgba(96,165,250,0.22), rgba(37,99,235,0.75));
       color:#eff6ff; border:none; border-radius:8px; padding:10px 12px; font-weight:600; cursor:pointer;

@@ -1,4 +1,4 @@
-import { state, defaultRadioImage } from './state.js';
+import { state, defaultRadioImage, truncateStationName } from './state.js';
 import { actions } from './actions.js';
 
 function getFavoriteKey(station) {
@@ -40,7 +40,9 @@ function renderFavoritesList() {
 
     const name = document.createElement('span');
     name.className = 'favorite-name';
-    name.textContent = station.name || 'Radio sin nombre';
+    const fullName = station.name || 'Radio sin nombre';
+    name.textContent = truncateStationName(fullName);
+    name.title = fullName;
 
     const remove = document.createElement('button');
     remove.className = 'favorite-remove';
