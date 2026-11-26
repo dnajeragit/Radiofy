@@ -64,6 +64,7 @@ export const state = {
   loadingMore: false,
   allCountries: [],
   currentStation: null,
+  isPlaying: false,
   radioHistory: [],
   favorites: [],
   radioSchedules: [],

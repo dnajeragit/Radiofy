@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const isNativeApp = window.Capacitor?.isNativePlatform?.() ?? false;
+  player.initializeNativePlayback();
   if ('serviceWorker' in navigator && !isNativeApp) {
     navigator.serviceWorker.register('./service-worker.js').catch(error => {
       console.error('No se pudo registrar el service worker de Radiofy.', error);

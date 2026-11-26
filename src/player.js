@@ -1,6 +1,67 @@
 import { state, defaultRadioImage, truncateStationName } from './state.js';
 import { actions } from './actions.js';
 
+let nativePlaybackPlugin = null;
+
+function isNativeApp() {
+  return window.Capacitor?.isNativePlatform?.() ?? false;
+}
+
+function initializeNativePlayback() {
+  if (!isNativeApp()) return;
+
+  nativePlaybackPlugin = window.Capacitor?.Plugins?.RadioPlayback
+    ?? window.Capacitor?.registerPlugin?.('RadioPlayback');
+  const playerContainer = document.querySelector('.player');
+  const toggleButton = document.getElementById('nativePlaybackToggle');
+  if (!nativePlaybackPlugin) {
+    console.error('El reproductor nativo de Radiofy no está disponible.');
+    actions.showScheduleStatus('No se pudo iniciar el reproductor nativo de Radiofy.');
+    return;
+  }
+
+  playerContainer.classList.add('native');
+  toggleButton.hidden = false;
+  toggleButton.addEventListener('click', async () => {
+    try {
+      if (state.isPlaying) {
+        await nativePlaybackPlugin.pause();
+      } else {
+        await nativePlaybackPlugin.resume();
+      }
+    } catch (error) {
+      console.error('No se pudo cambiar el estado de reproducción.', error);
+      actions.showScheduleStatus('No se pudo controlar la reproducción.');
+    }
+  });
+
+  nativePlaybackPlugin.addListener('playbackStateChanged', ({ isPlaying }) => {
+    state.isPlaying = isPlaying;
+    toggleButton.textContent = isPlaying ? 'Pausar' : 'Continuar';
+    toggleButton.setAttribute('aria-label', isPlaying ? 'Pausar emisora' : 'Continuar emisora');
+
+    if (isPlaying) {
+      const rightRail = document.querySelector('.right-rail');
+      rightRail.classList.add('has-played');
+      rightRail.setAttribute('aria-hidden', 'false');
+    }
+  });
+
+  nativePlaybackPlugin.getPlaybackState().then(({ isPlaying }) => {
+    if (state.currentStation) return;
+    state.isPlaying = isPlaying;
+    toggleButton.textContent = isPlaying ? 'Pausar' : 'Continuar';
+    toggleButton.setAttribute('aria-label', isPlaying ? 'Pausar emisora' : 'Continuar emisora');
+  }).catch(error => {
+    console.error('No se pudo consultar el estado de reproducción.', error);
+  });
+
+  nativePlaybackPlugin.addListener('playbackError', ({ message }) => {
+    console.error('Error de reproducción nativa:', message);
+    actions.showScheduleStatus(`No se pudo reproducir la emisora: ${message}`);
+  });
+}
+
 function renderSelectedStationCard() {
   const container = document.getElementById('selectedStationCard');
   const panel = document.getElementById('selectedStationPanel');
@@ -147,6 +208,24 @@ function play(url, name, scheduledStation = null) {
   addToHistory(station);
   renderSelectedStationCard();
 
+  if (isNativeApp()) {
+    if (!nativePlaybackPlugin) {
+      alert('El reproductor nativo de Radiofy no está disponible. Cierra y vuelve a abrir la app.');
+      return;
+    }
+
+    nativePlaybackPlugin.play({
+      url: safeUrl,
+      title: station.name || name || 'Radio',
+      country: station.country || '',
+      language: station.language || ''
+    }).catch(error => {
+      console.error('No se pudo iniciar la reproducción en segundo plano.', error);
+      actions.showScheduleStatus('No se pudo iniciar la reproducción de esta emisora.');
+    });
+    return;
+  }
+
   const player = document.getElementById('player');
   player.src = safeUrl;
   player.play().catch(error => {
@@ -155,4 +234,4 @@ function play(url, name, scheduledStation = null) {
   });
 }
 
-export { renderSelectedStationCard, renderHistoryList, addToHistory, play };
+export { renderSelectedStationCard, renderHistoryList, addToHistory, initializeNativePlayback, play };
