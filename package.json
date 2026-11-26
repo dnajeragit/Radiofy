@@ -1,0 +1,22 @@
+{
+  "name": "radiofy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Radiofy web and Android app",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "prepare:web": "node ./scripts/prepare-web.mjs",
+    "android:add": "npm run prepare:web && cap add android",
+    "android:sync": "npm run prepare:web && cap sync android",
+    "android:open": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.3",
+    "@capacitor/core": "^8.6.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.3"
+  }
+}

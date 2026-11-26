@@ -29,7 +29,23 @@ function applyHomeCountry() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  if ('serviceWorker' in navigator) {
+  const sidebar = document.querySelector('.sidebar');
+  const main = document.querySelector('.main');
+  const updateSearchControlsOffset = () => {
+    if (window.matchMedia('(max-width: 980px)').matches) {
+      main.style.setProperty('--mobile-sidebar-height', `${sidebar.offsetHeight}px`);
+    } else {
+      main.style.removeProperty('--mobile-sidebar-height');
+    }
+  };
+  updateSearchControlsOffset();
+  window.addEventListener('resize', updateSearchControlsOffset);
+  if ('ResizeObserver' in window) {
+    new ResizeObserver(updateSearchControlsOffset).observe(sidebar);
+  }
+
+  const isNativeApp = window.Capacitor?.isNativePlatform?.() ?? false;
+  if ('serviceWorker' in navigator && !isNativeApp) {
     navigator.serviceWorker.register('./service-worker.js').catch(error => {
       console.error('No se pudo registrar el service worker de Radiofy.', error);
     });
@@ -150,9 +166,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  const resultsBox = document.getElementById('results');
-  resultsBox.addEventListener('scroll', () => {
-    const nearBottom = resultsBox.scrollTop + resultsBox.clientHeight >= resultsBox.scrollHeight - 200;
-    if (nearBottom) actions.loadMoreStations();
-  });
 });

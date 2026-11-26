@@ -81,6 +81,7 @@
     .history-list {
       display:flex; flex-direction:column; gap:8px; max-height:calc(100vh - 360px); overflow-y:auto;
     }
+    .history-section { margin-top:12px; }
     .history-item {
       display:flex; align-items:center; gap:10px; padding:8px 8px; border-radius:10px;
       background:rgba(15,23,42,0.28); border:1px solid rgba(148,163,184,0.08); cursor:pointer;
@@ -257,6 +258,11 @@
       background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05);
       color:#ddd; padding:20px; border-radius:10px; width:100%;
     }
+    .load-more {
+      flex:0 0 100%; padding:16px; border:1px solid rgba(96,165,250,0.28); border-radius:10px;
+      background:rgba(37,99,235,0.12); color:#bfdbfe; font:inherit; font-weight:600; cursor:pointer;
+    }
+    .load-more:hover { background:rgba(37,99,235,0.2); }
     .player {
       position:fixed; z-index:10; bottom:0; left:0; right:0; background:rgba(24,24,24,0.96);
       padding:10px 20px; display:flex; align-items:center; justify-content:center;
@@ -360,8 +366,17 @@
         box-shadow:0 8px 22px rgba(0,0,0,0.28);
       }
 
+      .search-controls {
+        position:sticky; top:var(--mobile-sidebar-height, 0px); z-index:6; margin:-16px -16px 0; padding:16px 16px 0;
+        background:rgba(18,18,18,0.98); box-shadow:0 8px 18px rgba(0,0,0,0.28);
+      }
+
+      .country-panel {
+        max-height:36vh; max-height:36dvh; overflow-y:auto; overscroll-behavior:contain;
+      }
+
       .sidebar-header {
-        margin-bottom:10px;
+        visibility:hidden; margin-bottom:10px;
       }
 
       .sidebar > p {
@@ -400,6 +415,17 @@
 
       .favorite-empty {
         min-width:220px;
+      }
+
+      .history-section { margin-top:8px; }
+
+      .history-list {
+        flex-direction:row; max-height:none; overflow-x:auto; overflow-y:hidden;
+        padding-bottom:3px; scrollbar-width:thin;
+      }
+
+      .history-item {
+        flex:0 0 min(210px, 72vw); min-width:0;
       }
 
       .right-rail {

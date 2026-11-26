@@ -47,15 +47,21 @@
           <p class="favorites-title">Favoritos</p>
           <div id="favoritesList"></div>
         </div>
+        <div id="historyPanel" class="history-section">
+          <p class="favorites-title">Últimas reproducciones</p>
+          <div id="historyList" class="history-list"></div>
+        </div>
       </div>
     </aside>
 
     <main class="main">
-      <div class="search">
-        <input id="query" placeholder="Buscar radios, género, país..." />
-        <button id="searchBtn">Buscar</button>
+      <div class="search-controls">
+        <div class="search">
+          <input id="query" placeholder="Buscar radios, género, país..." />
+          <button id="searchBtn">Buscar</button>
+        </div>
+        <div id="countryPanel" class="country-panel"></div>
       </div>
-      <div id="countryPanel" class="country-panel"></div>
       <div id="results" class="results"></div>
     </main>
 
@@ -63,11 +69,6 @@
       <div id="selectedStationPanel" class="panel-card">
         <p class="panel-title">Estas escuchando...</p>
         <div id="selectedStationCard" class="now-playing-card"></div>
-      </div>
-
-      <div id="historyPanel" class="panel-card">
-        <p class="panel-title">Últimas reproducciones</p>
-        <div id="historyList" class="history-list"></div>
       </div>
     </aside>
   </div>

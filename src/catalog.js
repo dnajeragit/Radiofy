@@ -308,9 +308,11 @@ function renderStationsChunk() {
   });
 
   if (state.visibleCount < state.allStations.length) {
-    const more = document.createElement('div');
-    more.className = 'empty-state';
-    more.textContent = 'Desliza hacia abajo para cargar más radios...';
+    const more = document.createElement('button');
+    more.type = 'button';
+    more.className = 'load-more';
+    more.textContent = 'Toca aquí para cargar más radios';
+    more.addEventListener('click', loadMoreStations);
     container.appendChild(more);
   }
 }
