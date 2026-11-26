@@ -29,6 +29,12 @@ function applyHomeCountry() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./service-worker.js').catch(error => {
+      console.error('No se pudo registrar el service worker de Radiofy.', error);
+    });
+  }
+
   const queryInput = document.getElementById('query');
   const searchBtn = document.getElementById('searchBtn');
   const rightRail = document.querySelector('.right-rail');
