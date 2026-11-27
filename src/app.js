@@ -29,6 +29,9 @@ function applyHomeCountry() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  const isNativeApp = window.Capacitor?.isNativePlatform?.() ?? false;
+  document.body.classList.toggle('native-app', isNativeApp);
+
   const sidebar = document.querySelector('.sidebar');
   const main = document.querySelector('.main');
   const updateSearchControlsOffset = () => {
@@ -44,7 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
     new ResizeObserver(updateSearchControlsOffset).observe(sidebar);
   }
 
-  const isNativeApp = window.Capacitor?.isNativePlatform?.() ?? false;
   player.initializeNativePlayback();
   if ('serviceWorker' in navigator && !isNativeApp) {
     navigator.serviceWorker.register('./service-worker.js').catch(error => {
@@ -55,11 +57,36 @@ document.addEventListener('DOMContentLoaded', () => {
   const queryInput = document.getElementById('query');
   const searchBtn = document.getElementById('searchBtn');
   const rightRail = document.querySelector('.right-rail');
+  const searchControls = document.querySelector('.search-controls');
+  const results = document.getElementById('results');
+  const recentPanel = document.getElementById('historyPanel');
+  let lastScrollPosition = 0;
+  const updateScrollVisibility = () => {
+    const isMobile = window.matchMedia('(max-width: 980px)').matches;
+    const currentScrollPosition = isMobile ? window.scrollY : results.scrollTop;
+    const scrollDelta = currentScrollPosition - lastScrollPosition;
+    if (currentScrollPosition < 40 || scrollDelta < -6) {
+      searchControls.classList.remove('scroll-hidden');
+      recentPanel.classList.remove('scroll-hidden');
+    } else if (scrollDelta > 6) {
+      searchControls.classList.add('scroll-hidden');
+      recentPanel.classList.add('scroll-hidden');
+    }
+    lastScrollPosition = currentScrollPosition;
+  };
+  window.addEventListener('scroll', updateScrollVisibility, { passive: true });
+  results.addEventListener('scroll', updateScrollVisibility, { passive: true });
+  window.addEventListener('resize', updateScrollVisibility);
+
   document.getElementById('player').addEventListener('playing', () => {
     rightRail.classList.add('has-played');
     rightRail.setAttribute('aria-hidden', 'false');
   });
   actions.loadSchedules();
+  actions.syncNativeSchedules({
+    requestPermissions: state.radioSchedules.length > 0,
+    showResult: state.radioSchedules.length > 0
+  });
   const storedFavorites = localStorage.getItem('radiofy-favorites');
   if (storedFavorites) {
     try {
@@ -77,7 +104,10 @@ document.addEventListener('DOMContentLoaded', () => {
   applyHomeCountry();
   window.setInterval(actions.checkRadioSchedules, 15000);
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) actions.checkRadioSchedules();
+    if (!document.hidden) {
+      actions.checkRadioSchedules();
+      actions.syncNativeSchedules({ showResult: true });
+    }
   });
 
   document.getElementById('scheduleForm').addEventListener('submit', actions.createSchedule);
@@ -101,6 +131,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
       document.querySelectorAll('.nav-btn').forEach(navButton => navButton.classList.remove('active'));
       button.classList.add('active');
+
+      const favoritesView = document.getElementById('favoritesView');
+      if (button.dataset.action === 'show-favorites') {
+        searchControls.hidden = true;
+        results.hidden = true;
+        favoritesView.hidden = false;
+        actions.renderFavoritesList();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      searchControls.hidden = false;
+      results.hidden = false;
+      favoritesView.hidden = true;
 
       const filterType = button.dataset.filterType;
       const filterValue = button.dataset.filterValue || '';

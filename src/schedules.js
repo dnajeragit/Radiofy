@@ -140,7 +140,7 @@ function renderScheduleList() {
     remove.type = 'button';
     remove.textContent = 'Borrar';
     remove.setAttribute('aria-label', `Borrar programación de ${stationName.textContent}`);
-    remove.addEventListener('click', () => {
+    remove.addEventListener('click', async () => {
       const scheduleIndex = state.radioSchedules.findIndex(item => item.id === schedule.id);
       const [removedSchedule] = state.radioSchedules.splice(scheduleIndex, 1);
       if (!persistSchedules()) {
@@ -150,6 +150,7 @@ function renderScheduleList() {
       }
       renderScheduleList();
       showScheduleStatus('Programación eliminada.');
+      await actions.syncNativeSchedules();
     });
 
     copy.appendChild(stationName);
@@ -162,7 +163,7 @@ function renderScheduleList() {
   });
 }
 
-function createSchedule(event) {
+async function createSchedule(event) {
   event.preventDefault();
   if (!state.scheduleStation) return;
 
@@ -199,9 +200,12 @@ function createSchedule(event) {
 
   renderScheduleList();
   showScheduleStatus('Programación guardada.');
+  await actions.syncNativeSchedules({ requestPermissions: true, showResult: true });
 }
 
 function checkRadioSchedules() {
+  if (window.Capacitor?.isNativePlatform?.()) return;
+
   const now = new Date();
   const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -220,4 +224,14 @@ function checkRadioSchedules() {
   }
 }
 
-export { showScheduleStatus, persistSchedules, loadSchedules, setScheduleStation, openScheduleDrawer, closeScheduleDrawer, renderScheduleList, createSchedule, checkRadioSchedules };
+export {
+  showScheduleStatus,
+  persistSchedules,
+  loadSchedules,
+  setScheduleStation,
+  openScheduleDrawer,
+  closeScheduleDrawer,
+  renderScheduleList,
+  createSchedule,
+  checkRadioSchedules
+};

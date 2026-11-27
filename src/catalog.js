@@ -190,9 +190,34 @@ async function loadCountries() {
 }
 
 function detectUserCountry() {
-  const locale = (navigator.languages && navigator.languages[0]) || navigator.language || '';
-  const region = new Intl.Locale(locale).region || locale.split('-')[1] || '';
-  return COUNTRY_ALIASES[region.toUpperCase()] || null;
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+  const timeZoneCountries = {
+    'America/Santiago': 'Chile',
+    'America/Punta_Arenas': 'Chile',
+    'Pacific/Easter': 'Chile',
+    'America/Argentina/Buenos_Aires': 'Argentina',
+    'America/Argentina/Cordoba': 'Argentina',
+    'America/Argentina/Mendoza': 'Argentina',
+    'America/Montevideo': 'Uruguay',
+    'America/Sao_Paulo': 'Brasil',
+    'America/Fortaleza': 'Brasil',
+    'America/Manaus': 'Brasil',
+    'America/Recife': 'Brasil',
+    'America/Rio_Branco': 'Brasil',
+    'America/Lima': 'Perú',
+    'America/Bogota': 'Colombia',
+    'America/Guayaquil': 'Ecuador'
+  };
+  if (timeZoneCountries[timeZone]) return timeZoneCountries[timeZone];
+  if (timeZone.startsWith('America/Argentina/')) return 'Argentina';
+
+  const locales = [...(navigator.languages || []), navigator.language || ''];
+  for (const locale of locales) {
+    const region = new Intl.Locale(locale).region || locale.split('-')[1] || '';
+    const country = COUNTRY_ALIASES[region.toUpperCase()];
+    if (country) return country;
+  }
+  return null;
 }
 
 async function buscarRegion(region) {

@@ -36,6 +36,10 @@
           <span class="nav-icon" aria-hidden="true"></span>
           <span>Género</span>
         </button>
+        <button class="nav-btn" data-action="show-favorites" type="button">
+          <span class="nav-icon" aria-hidden="true"></span>
+          <span>Favoritos</span>
+        </button>
         <button class="nav-btn" data-action="open-schedules" type="button">
           <span class="nav-icon" aria-hidden="true"></span>
           <span>Programación</span>
@@ -45,10 +49,10 @@
       <div class="sidebar-footer">
         <div class="favorites-section">
           <p class="favorites-title">Favoritos</p>
-          <div id="favoritesList"></div>
+          <div id="favoritesSidebarList" class="favorites-sidebar-list"></div>
         </div>
         <div id="historyPanel" class="history-section">
-          <p class="favorites-title">Últimas reproducciones</p>
+          <p class="favorites-title">Recientes</p>
           <div id="historyList" class="history-list"></div>
         </div>
       </div>
@@ -63,6 +67,10 @@
         <div id="countryPanel" class="country-panel"></div>
       </div>
       <div id="results" class="results"></div>
+      <section id="favoritesView" class="favorites-view" aria-labelledby="favoritesHeading" hidden>
+        <h2 id="favoritesHeading">Favoritos</h2>
+        <div id="favoritesPageList" class="favorites-list-page"></div>
+      </section>
     </main>
 
     <aside class="right-rail" aria-hidden="true">
@@ -75,7 +83,10 @@
 
   <div class="player">
     <audio id="player" controls></audio>
-    <button id="nativePlaybackToggle" class="native-playback-toggle" type="button" hidden>Continuar</button>
+    <button id="nativePlaybackToggle" class="native-playback-toggle" type="button" aria-label="Reproducir emisora" title="Reproducir emisora" hidden>
+      <svg class="playback-icon play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.85c0-.77.84-1.24 1.5-.84l8.4 5.17a.98.98 0 0 1 0 1.68l-8.4 5.17c-.66.4-1.5-.07-1.5-.84V5.85Z"/></svg>
+      <svg class="playback-icon pause-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="5" width="4" height="14" rx="2"/><rect x="13" y="5" width="4" height="14" rx="2"/></svg>
+    </button>
   </div>
 
   <div id="scheduleBackdrop" class="schedule-backdrop" aria-hidden="true"></div>

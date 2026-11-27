@@ -1,7 +1,11 @@
 package com.radiofy.app;
 
+import android.Manifest;
 import android.content.ComponentName;
+import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
+import android.provider.Settings;
 import androidx.core.content.ContextCompat;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.MediaMetadata;
@@ -14,10 +18,19 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.getcapacitor.annotation.Permission;
+import com.getcapacitor.annotation.PermissionCallback;
+import com.getcapacitor.PermissionState;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.json.JSONException;
 import java.util.concurrent.ExecutionException;
 
-@CapacitorPlugin(name = "RadioPlayback")
+@CapacitorPlugin(
+    name = "RadioPlayback",
+    permissions = {
+        @Permission(alias = "notifications", strings = { Manifest.permission.POST_NOTIFICATIONS })
+    }
+)
 public final class RadioPlaybackPlugin extends Plugin {
     private ListenableFuture<MediaController> controllerFuture;
     private boolean listenerAttached;
@@ -93,6 +106,71 @@ public final class RadioPlaybackPlugin extends Plugin {
         });
     }
 
+    @PluginMethod
+    public void syncScheduledRadios(PluginCall call) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+            && getPermissionState("notifications") != PermissionState.GRANTED) {
+            if (call.getBoolean("requestNotificationPermission", false)) {
+                requestPermissionForAlias("notifications", call, "notificationPermissionCallback");
+            } else {
+                JSObject result = new JSObject();
+                result.put("notificationPermissionRequired", true);
+                call.resolve(result);
+            }
+            return;
+        }
+
+        syncSchedules(call);
+    }
+
+    @PermissionCallback
+    private void notificationPermissionCallback(PluginCall call) {
+        if (getPermissionState("notifications") != PermissionState.GRANTED) {
+            JSObject result = new JSObject();
+            result.put("notificationPermissionRequired", true);
+            call.resolve(result);
+            return;
+        }
+        syncSchedules(call);
+    }
+
+    @PluginMethod
+    public void requestExactAlarmPermission(PluginCall call) {
+        if (RadioScheduleManager.canScheduleExactAlarms(getContext())) {
+            call.resolve();
+            return;
+        }
+
+        try {
+            Intent settingsIntent = new Intent(
+                Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                Uri.parse("package:" + getContext().getPackageName())
+            );
+            getActivity().startActivity(settingsIntent);
+            call.resolve();
+        } catch (RuntimeException error) {
+            call.reject("No se pudo abrir el permiso de alarmas exactas de Android.", error);
+        }
+    }
+
+    private void syncSchedules(PluginCall call) {
+        if (!RadioScheduleManager.canScheduleExactAlarms(getContext())) {
+            JSObject result = new JSObject();
+            result.put("exactAlarmPermissionRequired", true);
+            call.resolve(result);
+            return;
+        }
+
+        try {
+            RadioScheduleManager.sync(getContext(), call.getString("schedules", "[]"));
+            JSObject result = new JSObject();
+            result.put("synced", true);
+            call.resolve(result);
+        } catch (JSONException | RuntimeException error) {
+            call.reject("No se pudieron sincronizar las radios programadas.", error);
+        }
+    }
+
     private void runWithController(PluginCall call, ControllerAction action) {
         connectToSession();
         controllerFuture.addListener(() -> {
@@ -161,6 +239,25 @@ public final class RadioPlaybackPlugin extends Plugin {
         JSObject error = new JSObject();
         error.put("message", message);
         notifyListeners("playbackError", error);
+    }
+
+    @Override
+    protected void handleOnNewIntent(Intent intent) {
+        super.handleOnNewIntent(intent);
+        if (intent == null || !RadioScheduleManager.ACTION_OPEN_SCHEDULE.equals(intent.getAction())) {
+            return;
+        }
+
+        String url = intent.getStringExtra(RadioScheduleManager.EXTRA_URL);
+        if (url == null || url.isEmpty()) {
+            return;
+        }
+        JSObject station = new JSObject();
+        station.put("url_resolved", url);
+        station.put("name", intent.getStringExtra(RadioScheduleManager.EXTRA_NAME));
+        station.put("country", intent.getStringExtra(RadioScheduleManager.EXTRA_COUNTRY));
+        station.put("language", intent.getStringExtra(RadioScheduleManager.EXTRA_LANGUAGE));
+        notifyListeners("scheduledStationRequested", station, true);
     }
 
     @Override

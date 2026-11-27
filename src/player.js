@@ -35,10 +35,15 @@ function initializeNativePlayback() {
     }
   });
 
+  const updatePlaybackToggle = isPlaying => {
+    toggleButton.classList.toggle('is-playing', isPlaying);
+    toggleButton.setAttribute('aria-label', isPlaying ? 'Pausar emisora' : 'Reproducir emisora');
+    toggleButton.title = isPlaying ? 'Pausar emisora' : 'Reproducir emisora';
+  };
+
   nativePlaybackPlugin.addListener('playbackStateChanged', ({ isPlaying }) => {
     state.isPlaying = isPlaying;
-    toggleButton.textContent = isPlaying ? 'Pausar' : 'Continuar';
-    toggleButton.setAttribute('aria-label', isPlaying ? 'Pausar emisora' : 'Continuar emisora');
+    updatePlaybackToggle(isPlaying);
 
     if (isPlaying) {
       const rightRail = document.querySelector('.right-rail');
@@ -50,8 +55,7 @@ function initializeNativePlayback() {
   nativePlaybackPlugin.getPlaybackState().then(({ isPlaying }) => {
     if (state.currentStation) return;
     state.isPlaying = isPlaying;
-    toggleButton.textContent = isPlaying ? 'Pausar' : 'Continuar';
-    toggleButton.setAttribute('aria-label', isPlaying ? 'Pausar emisora' : 'Continuar emisora');
+    updatePlaybackToggle(isPlaying);
   }).catch(error => {
     console.error('No se pudo consultar el estado de reproducción.', error);
   });
@@ -60,6 +64,55 @@ function initializeNativePlayback() {
     console.error('Error de reproducción nativa:', message);
     actions.showScheduleStatus(`No se pudo reproducir la emisora: ${message}`);
   });
+
+  nativePlaybackPlugin.addListener('scheduledStationRequested', station => {
+    if (station?.url_resolved) {
+      play(station.url_resolved, station.name || 'Radio', station);
+    }
+  });
+}
+
+async function syncNativeSchedules({ requestPermissions = false, showResult = false } = {}) {
+  if (!isNativeApp()) return true;
+  if (!nativePlaybackPlugin) {
+    console.error('El reproductor nativo de Radiofy no está disponible para sincronizar horarios.');
+    actions.showScheduleStatus('No se pudieron activar los recordatorios en Android.');
+    return false;
+  }
+
+  try {
+    const result = await nativePlaybackPlugin.syncScheduledRadios({
+      schedules: JSON.stringify(state.radioSchedules),
+      requestNotificationPermission: requestPermissions
+    });
+
+    if (result.notificationPermissionRequired) {
+      if (showResult || requestPermissions) {
+        actions.showScheduleStatus('Permite las notificaciones de Radiofy para recibir los recordatorios.');
+      }
+      return false;
+    }
+
+    if (result.exactAlarmPermissionRequired) {
+      if (showResult || requestPermissions) {
+        actions.showScheduleStatus('Android necesita permiso de «Alarmas y recordatorios» para avisar a la hora exacta.');
+      }
+      if (requestPermissions) {
+        await nativePlaybackPlugin.requestExactAlarmPermission();
+        actions.showScheduleStatus('Activa «Alarmas y recordatorios» para Radiofy y vuelve a la app.');
+      }
+      return false;
+    }
+
+    if (showResult && result.synced) {
+      actions.showScheduleStatus('Recordatorios exactos activados en Android.');
+    }
+    return Boolean(result.synced);
+  } catch (error) {
+    console.error('No se pudieron sincronizar los recordatorios de Radiofy.', error);
+    actions.showScheduleStatus('No se pudieron activar los recordatorios de Radiofy.');
+    return false;
+  }
 }
 
 function renderSelectedStationCard() {
@@ -234,4 +287,11 @@ function play(url, name, scheduledStation = null) {
   });
 }
 
-export { renderSelectedStationCard, renderHistoryList, addToHistory, initializeNativePlayback, play };
+export {
+  renderSelectedStationCard,
+  renderHistoryList,
+  addToHistory,
+  initializeNativePlayback,
+  syncNativeSchedules,
+  play
+};
