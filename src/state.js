@@ -1,12 +1,4 @@
-export const defaultRadioImage = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg" width="400" height="240" viewBox="0 0 400 240">
-        <rect width="400" height="240" fill="#0f172a"/>
-        <circle cx="200" cy="90" r="42" fill="#2563eb"/>
-        <circle cx="200" cy="90" r="18" fill="#0b1220"/>
-        <rect x="145" y="138" width="110" height="14" rx="7" fill="#60a5fa" opacity="0.9"/>
-        <rect x="118" y="166" width="164" height="12" rx="6" fill="#334155"/>
-      </svg>
-    `);
+export const defaultRadioImage = new URL('../icons/radiofy-placeholder.svg', import.meta.url).href;
 
 export const REGION_BY_COUNTRY = {
       'Argentina': 'Sudamérica',

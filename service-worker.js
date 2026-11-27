@@ -1,4 +1,4 @@
-const CACHE_NAME = 'radiofy-shell-v1';
+const CACHE_NAME = 'radiofy-shell-v3';
 const APP_SHELL = [
   './',
   './index.html',
@@ -11,6 +11,8 @@ const APP_SHELL = [
   './src/player.js',
   './src/schedules.js',
   './src/state.js',
+  './icons/radiofy.svg',
+  './icons/radiofy-placeholder.svg',
   './icons/radiofy-180.png',
   './icons/radiofy-192.png',
   './icons/radiofy-512.png',
