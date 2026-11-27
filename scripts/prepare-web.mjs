@@ -7,7 +7,7 @@ const webOutput = path.join(projectRoot, 'www');
 
 await mkdir(webOutput, { recursive: true });
 
-for (const file of ['index.html', 'manifest.webmanifest', 'service-worker.js']) {
+for (const file of ['index.html', 'privacy.html', 'manifest.webmanifest', 'service-worker.js']) {
   await cp(path.join(projectRoot, file), path.join(webOutput, file));
 }
 

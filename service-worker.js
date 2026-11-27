@@ -1,7 +1,8 @@
-const CACHE_NAME = 'radiofy-shell-v3';
+const CACHE_NAME = 'radiofy-shell-v4';
 const APP_SHELL = [
   './',
   './index.html',
+  './privacy.html',
   './manifest.webmanifest',
   './styles/app.css',
   './src/actions.js',
@@ -47,7 +48,9 @@ self.addEventListener('fetch', event => {
 
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match('./index.html'))
+      fetch(request).catch(() =>
+        caches.match(request).then(cachedResponse => cachedResponse || caches.match('./index.html'))
+      )
     );
     return;
   }

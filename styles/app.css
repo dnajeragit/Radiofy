@@ -147,6 +147,10 @@
     .sidebar-footer {
       margin-top:auto; padding-top:18px; border-top:1px solid rgba(255,255,255,0.08);
     }
+    .privacy-link {
+      display:inline-flex; margin-top:14px; color:#94a3b8; font-size:11px; text-decoration:none;
+    }
+    .privacy-link:hover, .privacy-link:focus-visible { color:#e2e8f0; text-decoration:underline; }
     .favorites-section { display:flex; flex-direction:column; gap:8px; }
     .favorites-sidebar-list { display:flex; flex-direction:column; gap:8px; }
     body.native-app .favorites-section { display:none; }
